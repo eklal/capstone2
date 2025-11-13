@@ -1,37 +1,56 @@
-import { useForm } from "react-hook-form";
-import { useDispatch } from "react-redux";
-import { login } from "../features/user/userSlice";
+import React from "react";
+import { useForm, SubmitHandler } from "react-hook-form";
+import { useMutation } from "@tanstack/react-query";
+import { loginUser } from "../api/user";
+import type { User } from "../types/User";
 
-interface FormData {
-  username: string;
+interface LoginFormInputs {
+  email: string;
+  password: string;
 }
 
-export default function Login() {
-  const { register, handleSubmit } = useForm<FormData>();
-  const dispatch = useDispatch();
+const Login: React.FC = () => {
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormInputs>();
 
-  const onSubmit = (data: FormData) => {
-    dispatch(login(data.username));
-  };
+  const mutation = useMutation<User, Error, LoginFormInputs>({
+    mutationFn: ({email, password}) => loginUser(email, password),
+    onSuccess: (user) => {
+      if(user?.token) {
+        localStorage.setItem("authToken", user?.token);
+      }
+    }
+
+});
+
+  const onSubmit: SubmitHandler<LoginFormInputs> = (data) => mutation.mutate(data);
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="p-6 bg-white rounded shadow-md w-80"
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 w-80 mx-auto mt-20">
+      <input
+        type="email"
+        placeholder="Email"
+        {...register("email", { required: "Email is required" })}
+        className="p-2 border rounded"
+      />
+      {errors.email && <span className="text-red-500">{errors.email.message}</span>}
+
+      <input
+        type="password"
+        placeholder="Password"
+        {...register("password", { required: "Password is required" })}
+        className="p-2 border rounded"
+      />
+      {errors.password && <span className="text-red-500">{errors.password.message}</span>}
+
+      <button
+        type="submit"
+        disabled={mutation.isPending}
+        className="bg-blue-500 text-white p-2 rounded disabled:opacity-50"
       >
-        <input
-          {...register("username")}
-          placeholder="Username"
-          className="border p-2 w-full mb-4"
-        />
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
-        >
-          Login
-        </button>
-      </form>
-    </div>
+        {mutation.isPending ? "Logging in..." : "Login"}
+      </button>
+    </form>
   );
-}
+};
+
+export default Login;
