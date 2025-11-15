@@ -1,6 +1,8 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "../pages/Login";
+import { Dashboard } from "@/pages/Dashboard";
+import Sample from "@/pages/Sample";
 
 // Define a type for route objects
 interface AppRoute {
@@ -10,7 +12,12 @@ interface AppRoute {
 
 // Central route definitions
 const appRoutes: AppRoute[] = [
-  { path: "/", element: <Login/>},
+  { path: "/", element: <Dashboard/>},
+  { path:'/login', element:<Login/>},
+  {path:"/find-trainers" ,element:<Sample />},
+  {path:"/how-it-works" ,element:<Sample />},
+  {path:"/become-trainer" ,element:<Sample />},
+  {path:"/trainer/:id" ,element:<Sample />}
 ];
 
 const AppRouter: React.FC = () => {
