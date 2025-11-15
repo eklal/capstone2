@@ -15,7 +15,11 @@
     "noEmit": true,
     "verbatimModuleSyntax": false,
     "erasableSyntaxOnly": false,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "include": ["src"]
 }
