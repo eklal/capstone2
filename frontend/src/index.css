@@ -1,3 +1,11 @@
+
+
+:root {
+  --primary: #C00F0C; /* primary color you provided */
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body { @apply bg-white; }
+
