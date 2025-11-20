@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "../pages/Login";
 import { Dashboard } from "@/pages/Dashboard";
 import Sample from "@/pages/Sample";
+import RegisterTrainer from "@/pages/RegisterTrainer";
 
 // Define a type for route objects
 interface AppRoute {
@@ -14,6 +15,7 @@ interface AppRoute {
 const appRoutes: AppRoute[] = [
   { path: "/", element: <Dashboard/>},
   { path:'/login', element:<Login/>},
+  { path:'/register/trainer', element:<RegisterTrainer/>},
   {path:"/find-trainers" ,element:<Sample />},
   {path:"/how-it-works" ,element:<Sample />},
   {path:"/become-trainer" ,element:<Sample />},

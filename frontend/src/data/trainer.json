@@ -5,8 +5,8 @@
 "title": "Certified Personal Trainer",
 "rating": 4.8,
 "reviews": 127,
-"thumbnail": "/assets/trainer1.jpg",
-"videoUrl": "/assets/sample-video.mp4",
+"thumbnail": "/trainer.png",
+"videoUrl": "/sample.mp4",
 "description": "Specializes in strength training and weight loss. 8+ years of experience helping clients achieve their fitness goals.",
 "price": "$16/hr",
 "tags": ["Weight Training", "Nutrition"]
@@ -17,8 +17,8 @@
 "title": "Strength & Conditioning Coach",
 "rating": 4.9,
 "reviews": 93,
-"thumbnail": "/assets/trainer2.jpg",
-"videoUrl": "/assets/sample-video2.mp4",
+"thumbnail": "/trainer.png",
+"videoUrl": "/sample.mp4",
 "description": "Expert in athletic performance improvement and muscle building programs.",
 "price": "$20/hr",
 "tags": ["Athletics", "Strength Training"]
@@ -29,8 +29,8 @@
 "title": "Nutrition & Wellness Coach",
 "rating": 4.7,
 "reviews": 64,
-"thumbnail": "/assets/trainer3.jpg",
-"videoUrl": "/assets/sample-video3.mp4",
+"thumbnail": "/trainer.png",
+"videoUrl": "/sample.mp4",
 "description": "Holistic nutritionist focusing on sustainable fat loss and energy optimisation.",
 "price": "$18/hr",
 "tags": ["Nutrition", "Wellness"]

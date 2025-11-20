@@ -2,6 +2,7 @@ import React from 'react';
 import { FaStar } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
+
 const TrainerCard: React.FC<{ trainer: any }> = ({ trainer }) => {
   return (
     <div className="bg-white shadow rounded-xl w-80 p-4">

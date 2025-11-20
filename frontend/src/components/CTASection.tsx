@@ -10,7 +10,7 @@ const CTASection: React.FC = () => {
 
         <div className="mt-6 flex justify-center gap-6">
           <Link to="/find-trainers" className="px-6 py-3 bg-gray-700 rounded text-white">Find a Trainer</Link>
-          <Link to="/become-trainer" className="px-6 py-3 bg-[var(--primary)] rounded text-white">Become a Trainer</Link>
+          <Link to="/register/trainer" className="px-6 py-3 bg-[var(--primary)] rounded text-white">Become a Trainer</Link>
         </div>
       </div>
     </section>
