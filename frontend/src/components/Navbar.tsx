@@ -26,13 +26,13 @@ const Navbar = () => {
                     <Link to="/become-trainer">Become a Trainer</Link>
 
                     <Link
-                        to="/login"
+                        to="/login?mode=signin"
                         className="border border-[var(--primary)] px-4 py-2 rounded-lg"
                     >
                         Sign In
                     </Link>
                     <Link
-                        to="/signup"
+                        to="/login?mode=signup"
                         className="bg-[var(--primary)] text-white px-4 py-2 rounded-lg"
                     >
                         Sign Up

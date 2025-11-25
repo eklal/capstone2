@@ -1,13 +1,27 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
+
 import AuthToggle from "./AuthToggle";
 import SignInForm from "./SignInForm";
 import SignUpForm from "./SignUpForm";
 
 const AuthContainer: React.FC = () => {
-    const [mode, setMode] = useState<"signin" | "signup">("signin");
+      const location = useLocation();
+
+         // Initialize mode based on URL
+    const getModeFromQuery = () => {
+        const queryParams = new URLSearchParams(location.search);
+        return queryParams.get("mode") === "signup" ? "signup" : "signin";
+    };
+    
+    const [mode, setMode] = useState<"signin" | "signup">(getModeFromQuery() );
+    useEffect(() => {
+        setMode(getModeFromQuery());
+    }, [location.search]);
+
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4  pt-24 pb-24">
             <div className="text-center mb-8">
                 <div className="bg-black text-white w-12 h-12 flex items-center justify-center rounded-lg mx-auto mb-4">
                     <span className="font-bold text-xl">🏋️</span>
