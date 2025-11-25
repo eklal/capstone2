@@ -21,9 +21,9 @@ const TrainerCard: React.FC<{ trainer: any }> = ({ trainer }) => {
       <p className="text-gray-600 mt-3 text-sm">{trainer.description}</p>
 
       <div className="mt-3 flex gap-2 flex-wrap">
-        {trainer.tags.map((t: string) => (
+        {/* {trainer.tags.map((t: string) => (
           <span key={t} className="px-2 py-1 bg-gray-200 rounded-full text-xs text-gray-700">{t}</span>
-        ))}
+        ))} */}
       </div>
 
       <div className="mt-4 flex items-center justify-between">

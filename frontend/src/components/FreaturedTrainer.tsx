@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import TrainerCard from './TrainerCard';
 
 const FeaturedTrainers: React.FC = () => {
-  const [trainers, setTrainers] = useState<any[]>([]);
+  const [trainers, setTrainers] = useState<any>([]);
 
   useEffect(() => {
     // Replace this with your real API call later:
@@ -21,7 +21,7 @@ const FeaturedTrainers: React.FC = () => {
         <p className="text-center text-gray-600">Top-rated fitness professionals in your area</p>
 
         <div className="mt-10 flex flex-wrap justify-center gap-8">
-          {trainers.map((t) => (
+          {trainers.data.map((t:any) => (
             <TrainerCard key={t.id} trainer={t} />
           ))}
         </div>

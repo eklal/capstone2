@@ -9,7 +9,7 @@ const FeaturedTrainers: React.FC = () => {
     // fetch('/api/trainers').then(r => r.json()).then(setTrainers)
 
     // For now we import the dummy JSON file inside data
-    import('@/data/trainer.json').then((module) => {
+    import('@/data/featuredTrainer.json').then((module) => {
       setTrainers(module.default || module);
     });
   }, []);
