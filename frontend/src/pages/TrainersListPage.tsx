@@ -59,7 +59,7 @@ export default function TrainersListPage() {
     return (
         <div>
             <Navbar />
-            <div className="max-w-6xl mx-auto p-6">
+            <div className="max-w-6xl mx-auto p-6 mt-20 md:mt-20 lg:mt-0">
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <h1 className="text-2xl font-semibold">Personal Trainers</h1>
