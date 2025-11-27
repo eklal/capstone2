@@ -6,10 +6,23 @@ Create Virtual Environment
 ti install pip
 sudo apt-get install python3-pip
 Create Virtual Environment
-  python3 -m venv myenv
+  python3 -m venv capstone
   To activate virtual env 
-  source myenv/bin/activate
+  source capstone/bin/activate
 
 
 To install Django 
 pip install django
+
+To create a new Django project
+django-admin startproject trydjango
+
+create superuser
+python manage.py createsuperuser
+
+Django Restframework
+pip install djangorestframework
+
+--Incase of pip externally managed error use
+
+pip install package_name --break-system-packages
