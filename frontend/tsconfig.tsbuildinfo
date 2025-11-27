@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/api/axios.ts","./src/api/user.ts","./src/app/store.ts","./src/components/button.tsx","./src/components/inputfield.tsx","./src/features/user/userslice.ts","./src/pages/login.tsx","./src/routes/approuter.tsx","./src/services/apiclient.ts","./src/types/user.ts"],"version":"5.9.3"}
