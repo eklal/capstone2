@@ -1,38 +1,142 @@
-[
 {
-"id": 1,
-"name": "Sarah Johnson",
-"title": "Certified Personal Trainer",
-"rating": 4.8,
-"reviews": 127,
-"thumbnail": "/assets/trainer1.jpg",
-"videoUrl": "/assets/sample-video.mp4",
-"description": "Specializes in strength training and weight loss. 8+ years of experience helping clients achieve their fitness goals.",
-"price": "$16/hr",
-"tags": ["Weight Training", "Nutrition"]
-},
-{
-"id": 2,
-"name": "Michael Roberts",
-"title": "Strength & Conditioning Coach",
-"rating": 4.9,
-"reviews": 93,
-"thumbnail": "/assets/trainer2.jpg",
-"videoUrl": "/assets/sample-video2.mp4",
-"description": "Expert in athletic performance improvement and muscle building programs.",
-"price": "$20/hr",
-"tags": ["Athletics", "Strength Training"]
-},
-{
-"id": 3,
-"name": "Aisha Bello",
-"title": "Nutrition & Wellness Coach",
-"rating": 4.7,
-"reviews": 64,
-"thumbnail": "/assets/trainer3.jpg",
-"videoUrl": "/assets/sample-video3.mp4",
-"description": "Holistic nutritionist focusing on sustainable fat loss and energy optimisation.",
-"price": "$18/hr",
-"tags": ["Nutrition", "Wellness"]
+  "items": [
+    {
+      "id": 1,
+      "name": "Sarah Johnson",
+      "title": "Certified Personal Trainer",
+      "rating": 4.9,
+      "reviews": 127,
+      "thumbnail": "/mnt/data/71b499f1-30d9-4544-b662-1d276c755d24.png",
+      "description": "Specializes in strength training and weight loss. 8+ years experience.",
+      "price": 65,
+      "specialties": ["Weight Training","Nutrition"],
+      "experienceYears": 8,
+      "location": "Sydney"
+    },
+    {
+      "id": 2,
+      "name": "Mike Chen",
+      "title": "CrossFit Certified",
+      "rating": 4.7,
+      "reviews": 89,
+      "thumbnail": "/mnt/data/71b499f1-30d9-4544-b662-1d276c755d24.png",
+      "description": "High-intensity functional fitness. 6 years experience.",
+      "price": 55,
+      "specialties": ["CrossFit","HIIT"],
+      "experienceYears": 6,
+      "location": "Melbourne"
+    },
+    {
+      "id": 3,
+      "name": "Emma Rodriguez",
+      "title": "Yoga & Pilates Instructor",
+      "rating": 5.0,
+      "reviews": 64,
+      "thumbnail": "/mnt/data/71b499f1-30d9-4544-b662-1d276c755d24.png",
+      "description": "Mind-body wellness specialist in yoga, pilates and meditation.",
+      "price": 45,
+      "specialties": ["Yoga","Pilates"],
+      "experienceYears": 5,
+      "location": "Brisbane"
+    },
+    {
+      "id": 4,
+      "name": "David Thompson",
+      "title": "Certified Nutritionist & Trainer",
+      "rating": 4.8,
+      "reviews": 156,
+      "thumbnail": "/mnt/data/71b499f1-30d9-4544-b662-1d276c755d24.png",
+      "description": "Comprehensive fitness and nutrition expert offering transformation programs.",
+      "price": 85,
+      "specialties": ["Nutrition"],
+      "experienceYears": 10,
+      "location": "Sydney"
+    },
+    {
+      "id": 5,
+      "name": "Liam Brown",
+      "title": "Strength Coach",
+      "rating": 4.5,
+      "reviews": 45,
+      "thumbnail": "/mnt/data/71b499f1-30d9-4544-b662-1d276c755d24.png",
+      "description": "Strength and conditioning specialist for athletes.",
+      "price": 70,
+      "specialties": ["Strength Training"],
+      "experienceYears": 7,
+      "location": "Perth"
+    },
+    {
+      "id": 6,
+      "name": "Olivia Martin",
+      "title": "Weight Loss Coach",
+      "rating": 4.6,
+      "reviews": 38,
+      "thumbnail": "/mnt/data/71b499f1-30d9-4544-b662-1d276c755d24.png",
+      "description": "Personalized weight loss programs and nutrition guidance.",
+      "price": 50,
+      "specialties": ["Weight Loss","Nutrition"],
+      "experienceYears": 4,
+      "location": "Adelaide"
+    },
+    {
+      "id": 7,
+      "name": "Noah Wilson",
+      "title": "HIIT Specialist",
+      "rating": 4.4,
+      "reviews": 21,
+      "thumbnail": "/mnt/data/71b499f1-30d9-4544-b662-1d276c755d24.png",
+      "description": "Short, intense sessions focusing on fat loss and conditioning.",
+      "price": 40,
+      "specialties": ["HIIT","Cardio"],
+      "experienceYears": 3,
+      "location": "Sydney"
+    },
+    {
+      "id": 8,
+      "name": "Chloe Nguyen",
+      "title": "Pilates Instructor",
+      "rating": 4.9,
+      "reviews": 70,
+      "thumbnail": "/mnt/data/71b499f1-30d9-4544-b662-1d276c755d24.png",
+      "description": "Pilates and core strength specialist.",
+      "price": 60,
+      "specialties": ["Pilates"],
+      "experienceYears": 6,
+      "location": "Melbourne"
+    },
+    {
+      "id": 9,
+      "name": "Ethan Davis",
+      "title": "Personal Trainer",
+      "rating": 4.3,
+      "reviews": 10,
+      "thumbnail": "/mnt/data/71b499f1-30d9-4544-b662-1d276c755d24.png",
+      "description": "General fitness and strength programs for individuals and groups.",
+      "price": 35,
+      "specialties": ["General Fitness"],
+      "experienceYears": 2,
+      "location": "Hobart"
+    },
+    {
+      "id": 10,
+      "name": "Ava Patel",
+      "title": "Functional Trainer",
+      "rating": 4.7,
+      "reviews": 52,
+      "thumbnail": "/mnt/data/71b499f1-30d9-4544-b662-1d276c755d24.png",
+      "description": "Improves everyday movement and athletic capacity.",
+      "price": 58,
+      "specialties": ["Functional Training"],
+      "experienceYears": 5,
+      "location": "Canberra"
+    }
+  ],
+  "pagination": {
+    "currentPage": 1,
+    "pageSize": 1,
+    "totalPages": 1,
+    "totalResults": 1,
+    "hasNextPage": true,
+    "hasPrevPage": false
+  }
 }
-]
