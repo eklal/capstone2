@@ -5,6 +5,7 @@ import { Dashboard } from "@/pages/Dashboard";
 import Sample from "@/pages/Sample";
 import RegisterTrainer from "@/pages/RegisterTrainer";
 import TrainersListPage from "@/pages/TrainersListPage";
+import TrainerProfilePage from "@/pages/TrainerProfilePage";
 
 // Define a type for route objects
 interface AppRoute {
@@ -20,7 +21,8 @@ const appRoutes: AppRoute[] = [
   {path:"/how-it-works" ,element:<Sample />},
   {path:"/become-trainer" ,element:<Sample />},
   {path:"/trainer/:id" ,element:<Sample />},
-    {path:"/find-trainers", element:<TrainersListPage/>} 
+    {path:"/find-trainers", element:<TrainersListPage/>},
+    {path:"/trainer-profile", element:<TrainerProfilePage/>} 
 
 ];
 

@@ -20,7 +20,7 @@ django-admin startproject trydjango
 
 create superuser
 python manage.py createsuperuser
-
+ls
 Django Restframework
 pip install djangorestframework
 
