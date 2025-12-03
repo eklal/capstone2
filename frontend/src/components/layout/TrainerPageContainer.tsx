@@ -1,13 +1,39 @@
-import React from "react";
+import { Outlet, Link } from "react-router-dom";
+import { useState } from "react";
 
-const PageContainer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export default function TrainerPageContainer() {
+  const [open, setOpen] = useState(true);
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
+    <div className="flex min-h-screen bg-gray-100">
+
+      {/* Sidebar */}
+      <aside
+        className={`bg-white shadow-md transition-all duration-300 ${
+          open ? "w-64" : "w-16"
+        }`}
+      >
+        <button
+          className="p-4"
+          onClick={() => setOpen(!open)}
+        >
+          {open ? "<<" : ">>"}
+        </button>
+
+        {open && (
+          <nav className="mt-6 flex flex-col gap-4 px-4">
+            <Link to="/trainer-dashboard" className="hover:text-blue-600">Dashboard</Link>
+            <Link to="/trainer-profile" className="hover:text-blue-600">Profile</Link>
+            <Link to="/trainer-bookings" className="hover:text-blue-600">Bookings</Link>
+            <Link to="/trainer-settings" className="hover:text-blue-600">Settings</Link>
+          </nav>
+        )}
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 p-6">
+        <Outlet />
       </main>
     </div>
   );
-};
-
-export default PageContainer;
+}

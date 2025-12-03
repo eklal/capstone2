@@ -1,12 +1,12 @@
 import React from "react";
 import Topbar from "../components/layout/TrainerNavbar";
-import PageContainer from "../components/layout/TrainerPageContainer";
 import ProfileHeader from "../components/profile/ProfileHeader";
 import ProfileForm from "../components/profile/ProfileForm";
 import ProfileStats from "../components/profile/ProfileStats";
 import Certifications from "../components/profile/Certifications";
 import AvailabilityCard from "../components/profile/AvailabilityCard";
 import ReviewsList from "../components/profile/ReviewsList";
+import TrainerPageContainer from "../components/layout/TrainerPageContainer";
 
 const TrainerProfilePage: React.FC = () => {
   const certs = [
@@ -33,7 +33,6 @@ const TrainerProfilePage: React.FC = () => {
   return (
     <>
       <Topbar />
-      <PageContainer>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <ProfileHeader name="Alex Thompson" title="Certified Personal Trainer & Nutrition Coach" location="New York, NY" joined="Jan 2023" />
@@ -49,7 +48,6 @@ const TrainerProfilePage: React.FC = () => {
             <AvailabilityCard schedule={schedule} />
           </div>
         </div>
-      </PageContainer>
     </>
   );
 };
