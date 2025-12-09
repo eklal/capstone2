@@ -5,32 +5,38 @@ import { Dashboard } from "@/pages/Dashboard";
 import Sample from "@/pages/Sample";
 import RegisterTrainer from "@/pages/RegisterTrainer";
 import TrainersListPage from "@/pages/TrainersListPage";
+import TrainerProfilePage from "@/pages/TrainerProfilePage";
+import TrainerDashboard from "@/pages/TrainerDashboard";
 
-// Define a type for route objects
+import TrainerPageContainer from "@/components/layout/TrainerPageContainer"; 
+
 interface AppRoute {
   path: string;
-  element: React.ReactElement; 
+  element: React.ReactElement;
 }
-
-// Central route definitions
-const appRoutes: AppRoute[] = [
-  { path: "/", element: <Dashboard/>},
-  { path:'/login', element:<Login/>},
-  { path:'/register/trainer', element:<RegisterTrainer/>},
-  {path:"/how-it-works" ,element:<Sample />},
-  {path:"/become-trainer" ,element:<Sample />},
-  {path:"/trainer/:id" ,element:<Sample />},
-    {path:"/find-trainers", element:<TrainersListPage/>} 
-
-];
 
 const AppRouter: React.FC = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {appRoutes.map(({ path, element }) => (
-          <Route key={path} path={path} element={element} />
-        ))}
+        
+        {/* Public Routes */}
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register/trainer" element={<RegisterTrainer />} />
+        <Route path="/how-it-works" element={<Sample />} />
+        <Route path="/become-trainer" element={<Sample />} />
+        <Route path="/trainer/:id" element={<Sample />} />
+        <Route path="/find-trainers" element={<TrainersListPage />} />
+
+        {/* Trainer Dashboard Area (with Sidebar) */}
+        <Route element={<TrainerPageContainer />}>
+          <Route path="/trainer-dashboard" element={<TrainerDashboard />} />
+          <Route path="/trainer-profile" element={<TrainerProfilePage />} />
+          <Route path="/trainer-bookings" element={<Sample />} />
+          <Route path="/trainer-settings" element={<Sample />} />
+        </Route>
+
       </Routes>
     </BrowserRouter>
   );

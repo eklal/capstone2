@@ -13,6 +13,19 @@ export interface Trainer {
   location: string;
 }
 
+// src/api/dashboard.ts
+export type RevenuePoint = { date: string; revenue: number };
+export type ProfileData = {
+  trainerId: number;
+  name: string;
+  totalRevenue: number;
+  activeBookings: number;
+  pendingRequests: number;
+  completedSessions: number;
+  revenueSeries: RevenuePoint[];
+};
+
+
 export interface TrainersResponse {
   data: Trainer[];
   pagination: {
@@ -87,4 +100,14 @@ export async function fetchTrainers({
       hasPrevPage: currentPage > 1,
     },
   };
+}
+
+
+/** fetch profile & revenue */
+export async function getTrainerProfile(trainerId?: number): Promise<ProfileData> {
+  await wait(800);
+  const module = await import("../data/profile.json");
+  const data: ProfileData = module.default || module;
+  // (optionally filter by trainerId)
+  return data;
 }
