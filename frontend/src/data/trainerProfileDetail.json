@@ -1,0 +1,37 @@
+{
+  "id": 101,
+  "fullName": "Alex Thompson",
+  "email": "alex.thompson@email.com",
+  "phone": "+1 (555) 123-4567",
+  "title": "Certified Personal Trainer & Nutrition Coach",
+  "location": "New York, NY",
+  "joined": "Jan 2023",
+  "experience": "5+ years",
+  "bio": "Passionate fitness trainer with expertise in strength training, weight loss, and nutrition coaching. I help clients achieve their fitness goals through personalized training programs and evidence-based nutrition guidance.",
+  "specialties": ["Strength Training", "Weight Loss", "Nutrition Coaching"],
+  "profileStats": {
+    "views": 1247,
+    "rating": 4.9,
+    "reviews": 87,
+    "responseRate": "98%"
+  },
+  "certifications": [
+    { "title": "NASM-CPT", "expires": "Dec 2025" },
+    { "title": "Nutrition Coach", "expires": "Mar 2026" },
+    { "title": "FMS Level 2", "expires": "Aug 2025" }
+  ],
+  "availability": {
+    "monday": "6:00 AM - 8:00 PM",
+    "tuesday": "6:00 AM - 8:00 PM",
+    "wednesday": "6:00 AM - 8:00 PM",
+    "thursday": "6:00 AM - 8:00 PM",
+    "friday": "6:00 AM - 6:00 PM",
+    "saturday": "8:00 AM - 4:00 PM",
+    "sunday": "Unavailable"
+  },
+  "reviews": [
+    { "author": "Sarah Johnson", "rating": 5, "time": "2 days ago", "content": "Great trainer! Alex helped me achieve my fitness goals with a personalized approach." },
+    { "author": "Mike Chen", "rating": 4, "time": "1 week ago", "content": "Very knowledgeable and supportive throughout my fitness journey." }
+  ]
+}
+

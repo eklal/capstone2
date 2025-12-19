@@ -1,4 +1,6 @@
 // src/api/trainers.ts
+import type { TrainerProfileDetail } from "../features/trainerProfile/trainerProfileSlice";
+
 export interface Trainer {
   id: number;
   name: string;
@@ -109,5 +111,20 @@ export async function getTrainerProfile(trainerId?: number): Promise<ProfileData
   const module = await import("../data/profile.json");
   const data: ProfileData = module.default || module;
   // (optionally filter by trainerId)
+  return data;
+}
+
+/** fetch trainer profile detail for editing */
+export async function getTrainerProfileDetail(trainerId: number): Promise<TrainerProfileDetail> {
+  await wait(600);
+  const module = await import("../data/trainerProfileDetail.json");
+  const data = module.default || module;
+  
+  // In a real API, you would filter by trainerId
+  // For now, we'll return the data as-is since it's a mock
+  if (data.id !== trainerId) {
+    throw new Error(`Trainer profile with ID ${trainerId} not found`);
+  }
+  
   return data;
 }

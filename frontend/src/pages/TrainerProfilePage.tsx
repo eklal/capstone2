@@ -1,54 +1,97 @@
-import React from "react";
-import Topbar from "../components/layout/TrainerNavbar";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "../app/store";
+import { setLoading, setProfile, updateProfile, setError, type TrainerProfileDetail } from "../features/trainerProfile/trainerProfileSlice";
+import { getTrainerProfileDetail } from "../api/trainers";
 import ProfileHeader from "../components/profile/ProfileHeader";
 import ProfileForm from "../components/profile/ProfileForm";
 import ProfileStats from "../components/profile/ProfileStats";
 import Certifications from "../components/profile/Certifications";
 import AvailabilityCard from "../components/profile/AvailabilityCard";
 import ReviewsList from "../components/profile/ReviewsList";
-import TrainerPageContainer from "../components/layout/TrainerPageContainer";
 
 const TrainerProfilePage: React.FC = () => {
-  const certs = [
-    { title: "NASM-CPT", expires: "Dec 2025" },
-    { title: "Nutrition Coach", expires: "Mar 2026" },
-    { title: "FMS Level 2", expires: "Aug 2025" },
-  ];
+  const dispatch = useDispatch<AppDispatch>();
+  const { profile, loading, error } = useSelector((state: RootState) => state.trainerProfile);
+  const trainerId = 101; // For now, using hardcoded ID. In future, get from auth/user context
 
-  const schedule = {
-    monday: "6:00 AM - 8:00 PM",
-    tuesday: "6:00 AM - 8:00 PM",
-    wednesday: "6:00 AM - 8:00 PM",
-    thursday: "6:00 AM - 8:00 PM",
-    friday: "6:00 AM - 6:00 PM",
-    saturday: "8:00 AM - 4:00 PM",
-    sunday: "Unavailable"
+  useEffect(() => {
+    const fetchProfile = async () => {
+      dispatch(setLoading(true));
+      try {
+        const profileData = await getTrainerProfileDetail(trainerId);
+        dispatch(setProfile(profileData));
+      } catch (err) {
+        dispatch(setError(err instanceof Error ? err.message : "Failed to fetch profile"));
+      }
+    };
+
+    if (!profile || profile.id !== trainerId) {
+      fetchProfile();
+    }
+  }, [dispatch, trainerId, profile]);
+
+  const handleSaveProfile = (updatedData: Partial<TrainerProfileDetail>) => {
+    dispatch(updateProfile(updatedData));
+    // In a real app, you would also call an API to save the changes
+    // await updateTrainerProfile(trainerId, updatedData);
   };
 
-  const reviews = [
-    { author: "Sarah Johnson", rating: 5, time: "2 days ago", content: "Great trainer!" },
-    { author: "Mike Chen", rating: 4, time: "1 week ago", content: "Very knowledgeable." },
-  ];
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-gray-500">Loading profile...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-red-500">Error: {error}</div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-gray-500">No profile data available</div>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <Topbar />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <ProfileHeader name="Alex Thompson" title="Certified Personal Trainer & Nutrition Coach" location="New York, NY" joined="Jan 2023" />
-            <ProfileForm />
-            <div className="mt-6 bg-white border rounded-lg p-6">
-              <ReviewsList reviews={reviews} />
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <ProfileStats views={1247} rating={4.9} reviews={87} responseRate="98%" />
-            <Certifications items={certs} />
-            <AvailabilityCard schedule={schedule} />
-          </div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2">
+        <ProfileHeader
+          name={profile.fullName}
+          title={profile.title}
+          location={profile.location}
+          joined={profile.joined}
+        />
+        <ProfileForm profile={profile} onSave={handleSaveProfile} />
+        <div className="mt-6 bg-white border rounded-lg p-6">
+          <ReviewsList reviews={profile.reviews} />
         </div>
-    </>
+      </div>
+
+      <div className="space-y-6">
+        <ProfileStats
+          views={profile.profileStats.views}
+          rating={profile.profileStats.rating}
+          reviews={profile.profileStats.reviews}
+          responseRate={profile.profileStats.responseRate}
+        />
+        <Certifications items={profile.certifications} />
+        <AvailabilityCard
+          schedule={profile.availability}
+          onUpdateSchedule={(availability) =>
+            handleSaveProfile({ availability })
+          }
+        />
+      </div>
+    </div>
   );
 };
 
