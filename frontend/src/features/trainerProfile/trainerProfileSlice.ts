@@ -84,3 +84,4 @@ export const { setLoading, setProfile, updateProfile, setError, clearProfile } =
   trainerProfileSlice.actions;
 export default trainerProfileSlice.reducer;
 
+
