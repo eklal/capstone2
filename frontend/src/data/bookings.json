@@ -1,0 +1,29 @@
+[
+  {
+    "id": "b1",
+    "client": "Sarah Johnson",
+    "service": "Personal Training",
+    "date": "2025-01-15",
+    "duration": "60 min",
+    "amount": 80,
+    "status": "pending"
+  },
+  {
+    "id": "b2",
+    "client": "Mike Chen",
+    "service": "Nutrition Consultation",
+    "date": "2025-01-16",
+    "duration": "45 min",
+    "amount": 60,
+    "status": "pending"
+  },
+  {
+    "id": "b3",
+    "client": "Emma Davis",
+    "service": "Group Fitness",
+    "date": "2025-01-17",
+    "duration": "90 min",
+    "amount": 120,
+    "status": "accepted"
+  }
+]

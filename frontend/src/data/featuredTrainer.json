@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "name": "John Doe",
+    "title": "Certified Fitness Trainer",
+    "rating": 4.8,
+    "reviews": 120,
+    "videoThumbnail": "/images/trainer1.jpg",
+    "description": "Expert strength coach helping people transform their bodies."
+  },
+  {
+    "id": 2,
+    "name": "Sarah Johnson",
+    "title": "Yoga & Wellness Coach",
+    "rating": 4.9,
+    "reviews": 98,
+    "videoThumbnail": "/images/trainer2.jpg",
+    "description": "Specialist in yoga, meditation, and women’s wellness."
+  }
+]

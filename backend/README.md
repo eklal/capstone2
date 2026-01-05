@@ -1,9 +1,10 @@
 - Readme file for backend.
 //To install python   sudo apt install python3
-Create Virtual Environment
+
+- Create Virtual Environment
   python3 -m venv myenv
 
-ti install pip
+- to install pip
 sudo apt-get install python3-pip
 Create Virtual Environment
   python3 -m venv capstone
@@ -19,7 +20,7 @@ django-admin startproject trydjango
 
 create superuser
 python manage.py createsuperuser
-
+ls
 Django Restframework
 pip install djangorestframework
 

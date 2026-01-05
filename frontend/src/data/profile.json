@@ -1,0 +1,17 @@
+{
+  "trainerId": 101,
+  "name": "Alex Thompson",
+  "totalRevenue": 12450,
+  "activeBookings": 24,
+  "pendingRequests": 8,
+  "completedSessions": 156,
+  "revenueSeries": [
+    { "date": "2025-01-01", "revenue": 800 },
+    { "date": "2025-01-05", "revenue": 1200 },
+    { "date": "2025-01-10", "revenue": 950 },
+    { "date": "2025-01-15", "revenue": 1800 },
+    { "date": "2025-01-20", "revenue": 700 },
+    { "date": "2025-01-25", "revenue": 1500 },
+    { "date": "2025-01-30", "revenue": 3500 }
+  ]
+}
