@@ -4,12 +4,27 @@ class Users(models.Model):
     last_name = models.CharField(max_length=30,blank=True)
     email = models.EmailField()
     mobile_phone = models.CharField(max_length=15)
+    role = models.IntegerField(default=1)
 
 class Appusers(models.Model):
     first_name = models.CharField(max_length=30,blank=False,default="")
     last_name = models.CharField(max_length=30,blank=True)
     email = models.EmailField()
     mobile_phone = models.CharField(max_length=15)
+    year_of_birth = models.IntegerField(default=2000)
+    height_in_cm = models.IntegerField(default=0)
+    weight = models.DecimalField(max_digits=3,decimal_places=1,default=0)
+
+class TrainerDetails(models.Model):
+    fullname = models.CharField(max_length=30,blank=False,default="")  
+    email = models.EmailField()
+    mobile_phone = models.CharField(max_length=15)
+    location = models.CharField(max_length=30,blank=True)
+    linkedIn_url = models.CharField(max_length=30,blank=True)
+    instagram_url = models.CharField(max_length=30,blank=True)
+    twitter_url = models.CharField(max_length=30,blank=True)
+    personal_website = models.CharField(max_length=30,blank=True)
+    additional_information = models.CharField(max_length=30,blank=True)
     year_of_birth = models.IntegerField(default=2000)
     height_in_cm = models.IntegerField(default=0)
     weight = models.DecimalField(max_digits=3,decimal_places=1,default=0)

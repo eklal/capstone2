@@ -1,10 +1,13 @@
 from .models import Appusers,bookings, bookings_attendance
-from .serializers import UsersSerializer,bookingsSerializers,bookingsattendanceSerializers
+from .serializers import *
 from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework.permissions import AllowAny
+from django.contrib.auth import authenticate, login
+
 
 
 class UsersList(APIView):
@@ -78,11 +81,18 @@ class BookingDetail(APIView):
         readybookings = self.get_object(pk)
         serializer = bookingsSerializers(readybookings)
         return Response(serializer.data)
+   
 
     @csrf_exempt
     def put(self, request, pk, format=None):
         readybookings = self.get_object(pk)
         serializer = bookingsSerializers(user, data=request.data)
+    def post(self, request):
+        serializer = UserRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "User registered"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -135,3 +145,29 @@ class AttendanceDetail(APIView):
         attendance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+
+class UserRegistration(APIView):
+    def post(self, request):
+        serializer = UserRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response({
+                "message": "User registered successfully",
+                "username": user.username,
+                "email": user.email,
+                "id": user.pk,
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class LoginView(APIView):
+    permission_classes = [AllowAny]  # allow login by anyone
+
+    def post(self, request):
+        username = request.data.get("username")
+        password = request.data.get("password")
+        id = request.data.get("id")
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)  # Django login → sets session
+            return Response({ "success": True, "username": user.username ,"id":user.pk}, status=status.HTTP_200_OK)
+        return Response({ "success": False, "error": "Invalid credentials" }, status=status.HTTP_401_UNAUTHORIZED)
