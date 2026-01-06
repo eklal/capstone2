@@ -1,11 +1,6 @@
 from rest_framework import serializers
-from .models import Item, User
+from .models import User
 from django.contrib.auth.password_validation import validate_password
-
-class ItemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Item
-        fields = '__all__'
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
