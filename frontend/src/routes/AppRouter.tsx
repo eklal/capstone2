@@ -7,6 +7,9 @@ import RegisterTrainer from "@/pages/RegisterTrainer";
 import TrainersListPage from "@/pages/TrainersListPage";
 import TrainerProfilePage from "@/pages/TrainerProfilePage";
 import TrainerDashboard from "@/pages/TrainerDashboard";
+import MyGigs from "@/pages/MyGigs";
+import GigPreviewPage from "@/pages/GigPreviewPage";
+import CreateEditGig from "@/pages/CreateEditGig";
 
 import TrainerPageContainer from "@/components/layout/TrainerPageContainer"; 
 
@@ -33,7 +36,12 @@ const AppRouter: React.FC = () => {
         <Route element={<TrainerPageContainer />}>
           <Route path="/trainer-dashboard" element={<TrainerDashboard />} />
           <Route path="/trainer-profile" element={<TrainerProfilePage />} />
+          <Route path="/trainer/gigs" element={<MyGigs />} />
+          <Route path="/trainer/gigs/new" element={<CreateEditGig />} />
+          <Route path="/trainer/gigs/:gigId/edit" element={<CreateEditGig />} />
+          <Route path="/trainer/gigs/:gigId" element={<GigPreviewPage />} />
           <Route path="/trainer-bookings" element={<Sample />} />
+          <Route path="/trainer-income" element={<Sample />} />
           <Route path="/trainer-settings" element={<Sample />} />
         </Route>
 
