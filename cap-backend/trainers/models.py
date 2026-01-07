@@ -1,28 +1,30 @@
 from django.db import models
-from django.conf import settings
+from django.contrib.contenttypes.fields import GenericRelation
+from users.models import User
+from files.models import File
 
 class TrainerProfile(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    profile_pic = models.ImageField(upload_to="trainer_profiles/", null=True, blank=True)
-    first_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50)
-    email = models.EmailField()
-    phone_number = models.CharField(max_length=20)
-    city = models.CharField(max_length=50, blank=True)
-    state = models.CharField(max_length=50, blank=True)
-    years_of_experience = models.IntegerField(null=True, blank=True)
-    hourly_rate = models.DecimalField(max_digits=8, decimal_places=2)
-    professional_title = models.CharField(max_length=100, blank=True)
-    bio = models.TextField(blank=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    phone = models.CharField(max_length=20)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    state = models.CharField(max_length=100, blank=True, null=True)
+    years_of_experience = models.IntegerField(default=0)
+    hourly_rate = models.DecimalField(max_digits=10, decimal_places=2)
+    professional_title = models.CharField(max_length=255, blank=True, null=True)
+    bio = models.TextField(blank=True, null=True)
+    profile_pic = models.ForeignKey(File, on_delete=models.SET_NULL, null=True, blank=True, related_name="profile_pic_for")
     specialisations = models.ManyToManyField('Specialisation', blank=True)
-    certifications = models.FileField(upload_to='trainer_certifications/', null=True, blank=True)
+    
+    # Use GenericRelation for multiple files (certifications)
+    certifications = GenericRelation(File, related_query_name="trainer_certifications")
+
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.user.username} - {self.professional_title or 'Trainer'}"
-
+        return self.user.username
 
 class Specialisation(models.Model):
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
         return self.name
