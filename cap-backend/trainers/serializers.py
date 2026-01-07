@@ -40,7 +40,8 @@ class TrainerReadSerializer(serializers.ModelSerializer):
             "profile_pic",
             "certifications",
             "specialisations",
-            "created_at"
+            "videos",
+            "created_at",
         ]
 
 
@@ -53,6 +54,9 @@ class TrainerCreateUpdateSerializer(serializers.ModelSerializer):
     certificate_files = serializers.ListField(
         child=serializers.FileField(), write_only=True, required=False
     )
+    videos = serializers.ListField(
+        child=serializers.URLField(), write_only=True, required=False
+    )
 
     class Meta:
         model = TrainerProfile
@@ -63,6 +67,7 @@ class TrainerCreateUpdateSerializer(serializers.ModelSerializer):
         specialisations = validated_data.pop("specialisations", [])
         profile_pic_file = validated_data.pop("profile_pic_file", None)
         certificate_files = validated_data.pop("certificate_files", [])
+        videos_data = validated_data.pop("videos", [])
 
         # Get user and validate
         user = User.objects.get(id=user_id)
@@ -72,6 +77,7 @@ class TrainerCreateUpdateSerializer(serializers.ModelSerializer):
         # Create trainer profile
         trainer = TrainerProfile.objects.create(user=user, **validated_data)
         trainer.specialisations.set(specialisations)
+        trainer.videos = videos_data 
 
         trainer_content_type = ContentType.objects.get_for_model(TrainerProfile)
 
@@ -96,12 +102,16 @@ class TrainerCreateUpdateSerializer(serializers.ModelSerializer):
         return trainer
 
     def update(self, instance, validated_data):
+        videos_data = validated_data.pop("videos", None)
         profile_pic_file = validated_data.pop("profile_pic_file", None)
         certificate_files = validated_data.pop("certificate_files", [])
         specialisations = validated_data.pop("specialisations", None)
 
         trainer_content_type = ContentType.objects.get_for_model(TrainerProfile)
 
+        if videos_data is not None:
+            instance.videos = videos_data 
+            
         # Update profile pic
         if profile_pic_file:
             file_instance = File.objects.create(
