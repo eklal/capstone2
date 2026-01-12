@@ -133,3 +133,18 @@ class SpecialisationListView(generics.ListAPIView):
         queryset = self.get_queryset()
         data = [{"id": spec.id, "name": spec.name} for spec in queryset]
         return Response(data)
+
+
+class FeaturedTrainersView(generics.ListAPIView):
+    """Get featured trainers (top rated/experienced)"""
+    serializer_class = TrainerReadSerializer
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        # Get top trainers based on experience and hourly rate
+        # You can modify this logic to use ratings when you add a rating field
+        queryset = TrainerProfile.objects.select_related("user").prefetch_related(
+            "specialisations", "certifications"
+        ).order_by('-years_of_experience', '-hourly_rate')[:6]  # Get top 6 trainers
+        
+        return queryset
