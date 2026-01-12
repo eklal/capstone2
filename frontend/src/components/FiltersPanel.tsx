@@ -1,5 +1,6 @@
 // src/components/FiltersPanel.tsx
 import React, { useEffect, useState } from "react";
+import { getSpecialisations, type Specialisation } from "@/api/trainers";
 
 export type FiltersState = {
   location?: string;
@@ -7,8 +8,6 @@ export type FiltersState = {
   priceRange?: string;
   experience?: string;
 };
-
-const SPECIALTIES = ["Weight Training","Cardio","Yoga","CrossFit","Nutrition","Pilates","HIIT"];
 
 export default function FiltersPanel({
   value,
@@ -24,8 +23,34 @@ export default function FiltersPanel({
   hideClose?: boolean;
 }) {
   const [state, setState] = useState<FiltersState>(value);
+  const [specialties, setSpecialties] = useState<Specialisation[]>([]);
+  const [loadingSpecialties, setLoadingSpecialties] = useState(true);
 
   useEffect(() => setState(value), [value]);
+
+  useEffect(() => {
+    const loadSpecialties = async () => {
+      try {
+        const data = await getSpecialisations();
+        setSpecialties(data);
+      } catch (error) {
+        console.error("Error loading specialties:", error);
+        // Fallback to hardcoded list if API fails
+        setSpecialties([
+          { id: 1, name: "Weight Training" },
+          { id: 2, name: "Cardio" },
+          { id: 3, name: "Yoga" },
+          { id: 4, name: "CrossFit" },
+          { id: 5, name: "Nutrition" },
+          { id: 6, name: "Pilates" },
+          { id: 7, name: "HIIT" },
+        ]);
+      } finally {
+        setLoadingSpecialties(false);
+      }
+    };
+    loadSpecialties();
+  }, []);
 
   const toggle = (s:string) => {
     setState(prev => {
@@ -49,14 +74,22 @@ export default function FiltersPanel({
 
       <div className="mt-4">
         <div className="font-semibold mb-2">Specialties</div>
-        <div className="grid grid-cols-2 gap-2">
-          {SPECIALTIES.map(s => (
-            <label key={s} className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={state.specialties.includes(s)} onChange={()=>toggle(s)} />
-              <span>{s}</span>
-            </label>
-          ))}
-        </div>
+        {loadingSpecialties ? (
+          <div className="text-sm text-gray-500">Loading...</div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            {specialties.map(s => (
+              <label key={s.id} className="flex items-center gap-2 text-sm">
+                <input 
+                  type="checkbox" 
+                  checked={state.specialties.includes(s.name)} 
+                  onChange={() => toggle(s.name)} 
+                />
+                <span>{s.name}</span>
+              </label>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="mt-4">

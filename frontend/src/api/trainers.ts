@@ -1,130 +1,137 @@
-// src/api/trainers.ts
-import type { TrainerProfileDetail } from "../features/trainerProfile/trainerProfileSlice";
+import api from "./axios";
 
-export interface Trainer {
+export interface Specialisation {
   id: number;
   name: string;
-  title: string;
-  rating: number;
-  reviews: number;
-  thumbnail: string;
-  description: string;
-  price: number;
-  specialties: string[];
-  experienceYears: number;
-  location: string;
 }
 
-// src/api/dashboard.ts
-export type RevenuePoint = { date: string; revenue: number };
-export type ProfileData = {
-  trainerId: number;
-  name: string;
-  totalRevenue: number;
-  activeBookings: number;
-  pendingRequests: number;
-  completedSessions: number;
-  revenueSeries: RevenuePoint[];
-};
-
-
-export interface TrainersResponse {
-  data: Trainer[];
-  pagination: {
-    currentPage: number;
-    pageSize: number;
-    totalPages: number;
-    totalResults: number;
-    hasNextPage: boolean;
-    hasPrevPage: boolean;
+export interface TrainerProfile {
+  id: number;
+  user_name: string;
+  email: string;
+  phone: string;
+  city?: string;
+  state?: string;
+  years_of_experience: number;
+  hourly_rate: number;
+  professional_title?: string;
+  bio?: string;
+  profile_pic?: {
+    id: number;
+    file: string;
+    uploaded_at: string;
   };
+  certifications?: Array<{
+    id: number;
+    file: string;
+    uploaded_at: string;
+  }>;
+  specialisations?: Specialisation[];
+  videos?: string[];
+  created_at: string;
 }
 
-// simulate network latency
-const wait = (ms = 600) => new Promise((res) => setTimeout(res, ms));
+export interface TrainerProfileUpdate {
+  phone: string;
+  city?: string;
+  state?: string;
+  years_of_experience: number;
+  hourly_rate: number;
+  professional_title?: string;
+  bio?: string;
+  specialisations?: number[];
+  videos?: string[];
+}
 
-export async function fetchTrainers({
-  page = 1,
-  pageSize = 5,
-  filters = {},
-  sortBy = "relevance",
-}: {
+export interface TrainerFilters {
+  location?: string;
+  specialties?: string[];
+  priceMin?: number;
+  priceMax?: number;
+  expMin?: number;
+  expMax?: number;
+}
+
+export interface TrainerListParams {
   page?: number;
   pageSize?: number;
-  filters?: any;
+  filters?: TrainerFilters;
   sortBy?: string;
-}): Promise<TrainersResponse> {
-  await wait(700);
+}
 
-  const module = await import("@/data/trainer.json");
-  const raw: any = module.items || module.default?.items || module;
+export interface PaginationInfo {
+  currentPage: number;
+  totalPages: number;
+  totalResults: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
 
-  // apply simple filters
-  let list = raw.slice();
+export interface TrainerListResponse {
+  data: TrainerProfile[];
+  pagination: PaginationInfo;
+  count: number;
+}
 
+// Get all trainers with filters and pagination
+export const getTrainers = async (): Promise<TrainerProfile[]> => {
+  const response = await api.get("/api/trainers/list/");
+  return response.data;
+};
+
+// Fetch trainers with filters and pagination
+export const fetchTrainers = async (params: TrainerListParams = {}): Promise<TrainerListResponse> => {
+  const { page = 1, pageSize = 10, filters = {}, sortBy = 'relevance' } = params;
+
+  // Build query parameters
+  const queryParams = new URLSearchParams();
+  queryParams.append('page', page.toString());
+  queryParams.append('page_size', pageSize.toString());
+  queryParams.append('sortBy', sortBy);
+
+  // Add filters
   if (filters.location) {
-    const loc = String(filters.location).toLowerCase();
-    list = list.filter((t: any) => t.location.toLowerCase().includes(loc));
+    queryParams.append('location', filters.location);
+  }
+  if (filters.specialties && filters.specialties.length > 0) {
+    filters.specialties.forEach(spec => {
+      queryParams.append('specialties[]', spec);
+    });
+  }
+  if (filters.priceMin !== undefined) {
+    queryParams.append('priceMin', filters.priceMin.toString());
+  }
+  if (filters.priceMax !== undefined) {
+    queryParams.append('priceMax', filters.priceMax.toString());
+  }
+  if (filters.expMin !== undefined) {
+    queryParams.append('expMin', filters.expMin.toString());
+  }
+  if (filters.expMax !== undefined) {
+    queryParams.append('expMax', filters.expMax.toString());
   }
 
-  if (filters.specialties && filters.specialties.length) {
-    list = list.filter((t: any) =>
-      filters.specialties.some((s: string) => t.specialties.includes(s))
-    );
-  }
+  const response = await api.get(`/api/trainers/list/?${queryParams.toString()}`);
+  return response.data;
+};
 
-  if (filters.priceMin != null) {
-    list = list.filter((t: any) => t.price >= filters.priceMin);
-  }
-  if (filters.priceMax != null) {
-    list = list.filter((t: any) => t.price <= filters.priceMax);
-  }
+// Get single trainer profile
+export const getTrainerProfile = async (id: number): Promise<TrainerProfile> => {
+  const response = await api.get(`/api/trainers/${id}/`);
+  return response.data;
+};
 
-  // sorting examples
-  if (sortBy === "price_asc") list.sort((a: any, b: any) => a.price - b.price);
-  else if (sortBy === "price_desc") list.sort((a: any, b: any) => b.price - a.price);
-  else if (sortBy === "rating") list.sort((a: any, b: any) => b.rating - a.rating);
+// Update trainer profile
+export const updateTrainerProfile = async (
+  id: number,
+  data: TrainerProfileUpdate
+): Promise<TrainerProfile> => {
+  const response = await api.patch(`/api/trainers/${id}/update/`, data);
+  return response.data;
+};
 
-  const totalResults = list.length;
-  const totalPages = Math.max(1, Math.ceil(totalResults / pageSize));
-  const currentPage = Math.min(Math.max(1, page), totalPages);
-  const start = (currentPage - 1) * pageSize;
-  const data = list.slice(start, start + pageSize);
-
-  return {
-    data,
-    pagination: {
-      currentPage,
-      pageSize,
-      totalPages,
-      totalResults,
-      hasNextPage: currentPage < totalPages,
-      hasPrevPage: currentPage > 1,
-    },
-  };
-}
-
-
-/** fetch profile & revenue */
-export async function getTrainerProfile(trainerId?: number): Promise<ProfileData> {
-  await wait(800);
-  const module = await import("../data/profile.json");
-  const data: ProfileData = module.default || module;
-  // (optionally filter by trainerId)
-  return data;
-}
-
-/** fetch trainer profile detail for editing */
-export async function getTrainerProfileDetail(trainerId: number): Promise<TrainerProfileDetail> {
-  await wait(600);
-  const module = await import("../data/trainerProfileDetail.json");
-  const data = module.default || module;
-  
-  // In a real API, you would filter by trainerId
-  // For now, we'll return the data as-is since it's a mock
-  if (data.id !== trainerId) {
-    throw new Error(`Trainer profile with ID ${trainerId} not found`);
-  }
-  
-  return data;
-}
+// Get all specialisations
+export const getSpecialisations = async (): Promise<Specialisation[]> => {
+  const response = await api.get("/api/trainers/specialisations/");
+  return response.data;
+};
