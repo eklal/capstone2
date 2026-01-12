@@ -5,7 +5,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/users/', include('users.urls')),
+    path('api/', include('users.urls')),  # Auth endpoints directly under /api/
     path('api/trainers/', include('trainers.urls')),
     path("api/bookings/", include("bookings.urls")),
 ]
