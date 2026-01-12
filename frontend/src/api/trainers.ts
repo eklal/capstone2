@@ -79,6 +79,12 @@ export const getTrainers = async (): Promise<TrainerProfile[]> => {
   return response.data;
 };
 
+// Get featured trainers
+export const getFeaturedTrainers = async (): Promise<TrainerProfile[]> => {
+  const response = await api.get("/api/trainers/featured/");
+  return response.data;
+};
+
 // Fetch trainers with filters and pagination
 export const fetchTrainers = async (params: TrainerListParams = {}): Promise<TrainerListResponse> => {
   const { page = 1, pageSize = 10, filters = {}, sortBy = 'relevance' } = params;

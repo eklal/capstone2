@@ -10,6 +10,16 @@ const Navbar = () => {
 
     const closeMenu = () => setIsOpen(false);
 
+    // Get dashboard route based on user role
+    const getDashboardRoute = () => {
+        if (user?.role === "trainer") {
+            return "/trainer-dashboard";
+        } else if (user?.role === "client") {
+            return "/client-dashboard"; // or "/" for home
+        }
+        return "/";
+    };
+
     return (
         <nav className="w-full fixed top-0 left-0 z-50 bg-white shadow">
             <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
@@ -44,7 +54,7 @@ const Navbar = () => {
                         </>
                     ) : (
                         <>
-                            <Link to="/dashboard" className="flex items-center gap-2">
+                            <Link to={getDashboardRoute()} className="flex items-center gap-2">
                                 <span className="font-medium">👤 {user?.username}</span>
                             </Link>
                             <button
@@ -122,7 +132,7 @@ const Navbar = () => {
                     ) : (
                         <>
                             <Link
-                                to="/dashboard"
+                                to={getDashboardRoute()}
                                 className="mt-6 border border-[var(--primary)] px-4 py-2 rounded-lg text-center"
                                 onClick={closeMenu}
                             >

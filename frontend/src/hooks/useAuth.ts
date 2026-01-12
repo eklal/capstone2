@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import { loginUser as loginUserApi, signUpUser as signUpUserApi, getCurrentUser, logoutUser as logoutUserApi } from "@/api/user";
 import { setCredentials, logout as logoutAction } from "@/features/user/userSlice";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
@@ -8,7 +9,11 @@ import type { User, LoginCredentials, SignUpData } from "@/types/User";
 export const useAuth = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isLoggedIn, token } = useAppSelector((state) => state.user);
+
+  // Get the redirect path from location state or default to home
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
 
   // Sign up mutation
   const signUpMutation = useMutation<User, Error, SignUpData>({
@@ -16,7 +21,7 @@ export const useAuth = () => {
     onSuccess: (user) => {
       if (user?.token) {
         dispatch(setCredentials({ user, token: user.token }));
-        navigate("/");
+        navigate(from, { replace: true });
       }
     },
   });
@@ -27,7 +32,7 @@ export const useAuth = () => {
     onSuccess: (user) => {
       if (user?.token) {
         dispatch(setCredentials({ user, token: user.token }));
-        navigate("/");
+        navigate(from, { replace: true });
       }
     },
   });
@@ -46,13 +51,20 @@ export const useAuth = () => {
     },
   });
 
-  // Fetch current user (when token exists)
+  // Fetch current user (when token exists but no user data)
   const { data: currentUser, refetch: refetchUser } = useQuery<User>({
     queryKey: ["currentUser"],
     queryFn: getCurrentUser,
-    enabled: !!token && isLoggedIn,
+    enabled: !!token && isLoggedIn && !user, // Only fetch if we don't have user data
     retry: false,
   });
+
+  // Update Redux store when currentUser is fetched
+  useEffect(() => {
+    if (currentUser && token && !user) {
+      dispatch(setCredentials({ user: currentUser, token }));
+    }
+  }, [currentUser, token, user, dispatch]);
 
   // Logout function
   const logout = () => {
