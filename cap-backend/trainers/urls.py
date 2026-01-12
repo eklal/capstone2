@@ -5,11 +5,13 @@ from .views import (
     TrainerDetailView,
     TrainerUpdateView,
     TrainerDeleteView,
+    SpecialisationListView,
 )
 
 urlpatterns = [
     path("create/", TrainerCreateView.as_view(), name="trainer-create"),
     path("list/", TrainerListView.as_view(), name="trainer-list"),
+    path("specialisations/", SpecialisationListView.as_view(), name="specialisations-list"),
     path("<int:pk>/", TrainerDetailView.as_view(), name="trainer-detail"),
     path("<int:pk>/update/", TrainerUpdateView.as_view(), name="trainer-update"),
     path("<int:pk>/delete/", TrainerDeleteView.as_view(), name="trainer-delete"),

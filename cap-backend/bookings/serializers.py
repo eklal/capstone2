@@ -1,13 +1,38 @@
 # bookings/serializers.py
 from rest_framework import serializers
-from .models import Booking
+from .models import Booking, Availability
 from users.models import User
 from trainers.models import TrainerProfile
 from django.core.mail import send_mail
 from django.conf import settings
 
+
+class AvailabilitySerializer(serializers.ModelSerializer):
+    trainer_name = serializers.CharField(source="trainer.user.username", read_only=True)
+
+    class Meta:
+        model = Availability
+        fields = [
+            "id",
+            "trainer",
+            "trainer_name",
+            "day_of_week",
+            "start_time",
+            "end_time",
+            "is_available",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["created_at", "updated_at"]
+
+    def validate(self, data):
+        if data["end_time"] <= data["start_time"]:
+            raise serializers.ValidationError("End time must be after start time.")
+        return data
+
 class BookingSerializer(serializers.ModelSerializer):
     client_name = serializers.CharField(source="client.username", read_only=True)
+    client_email = serializers.EmailField(source="client.email", read_only=True)
     trainer_name = serializers.CharField(source="trainer.user.username", read_only=True)
     trainer_email = serializers.EmailField(source="trainer.user.email", read_only=True)
 
@@ -17,16 +42,21 @@ class BookingSerializer(serializers.ModelSerializer):
             "id",
             "client",
             "client_name",
+            "client_email",
             "trainer",
             "trainer_name",
             "trainer_email",
+            "session_type",
             "date",
             "start_time",
             "end_time",
+            "price",
             "status",
             "notes",
-            "created_at"
+            "created_at",
+            "updated_at",
         ]
+        read_only_fields = ["created_at", "updated_at"]
 
     def validate(self, data):
         # Optional: validate end_time > start_time

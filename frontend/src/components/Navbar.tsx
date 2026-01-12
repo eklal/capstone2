@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { HiMenu } from "react-icons/hi";
 import { IoClose } from "react-icons/io5";
+import { useAuth } from "@/hooks/useAuth";
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
+    const { user, isLoggedIn, logout } = useAuth();
 
     const closeMenu = () => setIsOpen(false);
 
@@ -21,22 +23,38 @@ const Navbar = () => {
 
                 {/* Desktop Menu */}
                 <div className="hidden md:flex items-center gap-8">
-                    <Link to="/find-trainers">Find Trainers</Link>
-                    <Link to="/how-it-works">How It Works</Link>
-                    <Link to="/become-trainer">Become a Trainer</Link>
+                    {!isLoggedIn ? (
+                        <>
+                            <Link to="/find-trainers">Find Trainers</Link>
+                            <Link to="/how-it-works">How It Works</Link>
+                            <Link to="/become-trainer">Become a Trainer</Link>
 
-                    <Link
-                        to="/login?mode=signin"
-                        className="border border-[var(--primary)] px-4 py-2 rounded-lg"
-                    >
-                        Sign In
-                    </Link>
-                    <Link
-                        to="/login?mode=signup"
-                        className="bg-[var(--primary)] text-white px-4 py-2 rounded-lg"
-                    >
-                        Sign Up
-                    </Link>
+                            <Link
+                                to="/login?mode=signin"
+                                className="border border-[var(--primary)] px-4 py-2 rounded-lg"
+                            >
+                                Sign In
+                            </Link>
+                            <Link
+                                to="/login?mode=signup"
+                                className="bg-[var(--primary)] text-white px-4 py-2 rounded-lg"
+                            >
+                                Sign Up
+                            </Link>
+                        </>
+                    ) : (
+                        <>
+                            <Link to="/dashboard" className="flex items-center gap-2">
+                                <span className="font-medium">👤 {user?.username}</span>
+                            </Link>
+                            <button
+                                onClick={logout}
+                                className="border border-red-500 text-red-500 px-4 py-2 rounded-lg hover:bg-red-50"
+                            >
+                                Logout
+                            </button>
+                        </>
+                    )}
                 </div>
 
                 {/* Hamburger (Mobile Only) */}
@@ -71,33 +89,57 @@ const Navbar = () => {
 
                 {/* Sidebar Menu Items */}
                 <div className="mt-12 flex flex-col gap-6 text-lg">
-                    <Link to="/find-trainers" onClick={closeMenu}>
-                        Find Trainers
-                    </Link>
+                    {!isLoggedIn ? (
+                        <>
+                            <Link to="/find-trainers" onClick={closeMenu}>
+                                Find Trainers
+                            </Link>
 
-                    <Link to="/how-it-works" onClick={closeMenu}>
-                        How It Works
-                    </Link>
+                            <Link to="/how-it-works" onClick={closeMenu}>
+                                How It Works
+                            </Link>
 
-                    <Link to="/become-trainer" onClick={closeMenu}>
-                        Become a Trainer
-                    </Link>
+                            <Link to="/become-trainer" onClick={closeMenu}>
+                                Become a Trainer
+                            </Link>
 
-                    <Link
-                        to="/login"
-                        className="mt-6 border border-[var(--primary)] px-4 py-2 rounded-lg text-center"
-                        onClick={closeMenu}
-                    >
-                        Sign In
-                    </Link>
+                            <Link
+                                to="/login?mode=signin"
+                                className="mt-6 border border-[var(--primary)] px-4 py-2 rounded-lg text-center"
+                                onClick={closeMenu}
+                            >
+                                Sign In
+                            </Link>
 
-                    <Link
-                        to="/signup"
-                        className="bg-[var(--primary)] text-white px-4 py-2 rounded-lg text-center"
-                        onClick={closeMenu}
-                    >
-                        Sign Up
-                    </Link>
+                            <Link
+                                to="/login?mode=signup"
+                                className="bg-[var(--primary)] text-white px-4 py-2 rounded-lg text-center"
+                                onClick={closeMenu}
+                            >
+                                Sign Up
+                            </Link>
+                        </>
+                    ) : (
+                        <>
+                            <Link
+                                to="/dashboard"
+                                className="mt-6 border border-[var(--primary)] px-4 py-2 rounded-lg text-center"
+                                onClick={closeMenu}
+                            >
+                                👤 {user?.username}
+                            </Link>
+
+                            <button
+                                onClick={() => {
+                                    logout();
+                                    closeMenu();
+                                }}
+                                className="border border-red-500 text-red-500 px-4 py-2 rounded-lg text-center hover:bg-red-50"
+                            >
+                                Logout
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
         </nav>
