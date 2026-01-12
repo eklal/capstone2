@@ -1,35 +1,36 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
-import { useMutation } from "@tanstack/react-query";
-import { loginUser } from "@/api/user";
-import type { User } from "@/types/User";
+import { useAuth } from "@/hooks/useAuth";
 import Input from "../ui/Input";
 import AuthModal from "./AuthModal";
 
 interface SignInFormInputs {
-    email: string;
+    username: string;
     password: string;
     remember: boolean;
 }
 
 const SignInForm: React.FC = () => {
-    const { register, handleSubmit, formState: { errors }, watch, setError } = useForm<SignInFormInputs>();
+    const { login, isLoggingIn, loginError, resetLoginError } = useAuth();
 
-    const mutation = useMutation<User, Error, SignInFormInputs>({
-        mutationFn: ({ email, password }) => loginUser(email, password),
-        onSuccess: (user) => {
-            if (user?.token) {
-                localStorage.setItem("authToken", user?.token);
-            }
-        },
-        onError: (error: any) => {
-            // example: show API error under password field
-            setError("password", { message: error.message || "Invalid credentials" });
-        }
-    });
+    const { register, handleSubmit, formState: { errors }, setError } = useForm<SignInFormInputs>();
 
     const [authProvider, setAuthProvider] = useState<"google" | "facebook" | null>(null);
     const [isModalOpen, setModalOpen] = useState(false);
+
+    // Show backend error under password field
+    useEffect(() => {
+        if (loginError) {
+            setError("password", { message: loginError.message || "Invalid credentials" });
+        }
+    }, [loginError, setError]);
+
+    // Clear error when component unmounts
+    useEffect(() => {
+        return () => {
+            resetLoginError();
+        };
+    }, [resetLoginError]);
 
     const handleGoogleLogin = () => {
         setAuthProvider("google");
@@ -41,21 +42,22 @@ const SignInForm: React.FC = () => {
         setModalOpen(true);
     };
 
-    const onSubmit: SubmitHandler<SignInFormInputs> = (data) => mutation.mutate(data);
+    const onSubmit: SubmitHandler<SignInFormInputs> = (data) => {
+        login({ username: data.username, password: data.password });
+    };
 
     return (
         <>
             <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 w-full max-w-md mx-auto">
-                {/* EMAIL */}
+                {/* USERNAME */}
                 <Input
-                    label="Email Address"
-                    type="email"
-                    placeholder="Enter your email"
-                    {...register("email", {
-                        required: "Email is required",
-                        pattern: { value: /^\S+@\S+\.\S+$/, message: "Invalid email format" }
+                    label="Username"
+                    type="text"
+                    placeholder="Enter your username"
+                    {...register("username", {
+                        required: "Username is required",
                     })}
-                    error={errors.email?.message}
+                    error={errors.username?.message}
                 />
 
                 {/* PASSWORD */}
@@ -87,9 +89,9 @@ const SignInForm: React.FC = () => {
                 <button
                     type="submit"
                     className="w-full bg-[var(--primary)] text-white py-2 rounded-md hover:bg-primary-dark transition"
-                    disabled={mutation.isPending}
+                    disabled={isLoggingIn}
                 >
-                    {mutation.isPending ? "Signing in..." : "Sign In"}
+                    {isLoggingIn ? "Signing in..." : "Sign In"}
                 </button>
 
                 {/* OR CONTINUE WITH */}

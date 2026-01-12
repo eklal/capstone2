@@ -1,16 +1,19 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
-import { useMutation } from "@tanstack/react-query";
-import { signUpUser } from "@/api/user";
+import { useAuth } from "@/hooks/useAuth";
 import Input from "../ui/Input";
 
 interface SignUpInputs {
+  username: string;
   email: string;
   password: string;
   confirmPassword: string;
+  role: "trainer" | "client";
 }
 
 const SignUpForm: React.FC = () => {
+  const { signUp, isSigningUp, signUpError, resetSignUpError } = useAuth();
+
   const {
     register,
     handleSubmit,
@@ -21,29 +24,47 @@ const SignUpForm: React.FC = () => {
 
   const password = watch("password");
 
-  const mutation = useMutation({
-    mutationFn: (data: { email: string; password: string }) =>
-      signUpUser(data),
-
-    onError: (error: any) => {
-      // Backend error → show under email field
+  // Show backend error under email field
+  useEffect(() => {
+    if (signUpError) {
       setError("email", {
-        message: error?.response?.data?.message || "Signup failed",
+        message: signUpError.message || "Signup failed",
       });
-    },
+    }
+  }, [signUpError, setError]);
 
-    onSuccess: (user) => {
-      console.log("User registered", user);
-      // You can redirect user or auto-login here if needed
-    },
-  });
+  // Clear error when component unmounts
+  useEffect(() => {
+    return () => {
+      resetSignUpError();
+    };
+  }, [resetSignUpError]);
 
   const onSubmit: SubmitHandler<SignUpInputs> = (data) => {
-    mutation.mutate({ email: data.email, password: data.password });
+    signUp({
+      username: data.username,
+      email: data.email,
+      password: data.password,
+      role: data.role,
+    });
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
+      {/* Username */}
+      <Input
+        label="Username"
+        type="text"
+        placeholder="Enter your username"
+        {...register("username", {
+          required: "Username is required",
+          pattern: {
+            value: /^[a-zA-Z0-9]+$/,
+            message: "Invalid username format",
+          },
+        })}
+        error={errors.username?.message}
+      />
       {/* Email */}
       <Input
         label="Email Address"
@@ -58,6 +79,7 @@ const SignUpForm: React.FC = () => {
         })}
         error={errors.email?.message}
       />
+
 
       {/* Password */}
       <Input
@@ -91,13 +113,41 @@ const SignUpForm: React.FC = () => {
         error={errors.confirmPassword?.message}
       />
 
+      {/* Role Selection */}
+      <div className="mb-4">
+        <label className="text-sm text-gray-600">I am a</label>
+        <div className="flex gap-4">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              value="client"
+              {...register("role", { required: "Please select a role" })}
+              className="w-4 h-4 text-sm text-gray-600"
+            />
+            <span className="text-sm text-gray-600">Client</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              value="trainer"
+              {...register("role", { required: "Please select a role" })}
+              className="w-4 h-4"
+            />
+            <span className="text-sm text-gray-600">Trainer</span>
+          </label>
+        </div>
+        {errors.role && (
+          <p className="text-red-500 text-sm mt-1">{errors.role.message}</p>
+        )}
+      </div>
+
       {/* Submit Button */}
       <button
         type="submit"
         className="w-full bg-[var(--primary)] text-white py-2 rounded-md mt-4 transition"
-        disabled={mutation.isPending}
+        disabled={isSigningUp}
       >
-        {mutation.isPending ? "Creating Account..." : "Create Account"}
+        {isSigningUp ? "Creating Account..." : "Create Account"}
       </button>
     </form>
   );
