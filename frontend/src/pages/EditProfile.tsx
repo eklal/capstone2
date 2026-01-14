@@ -6,13 +6,6 @@ import type { TrainerProfileUpdate, TrainerProfile } from "@/api/trainers";
 import type { AvailabilitySlot } from "@/api/availability";
 import toast, { Toaster } from "react-hot-toast";
 
-interface TimeSlot {
-  day: string;
-  start_time: string;
-  end_time: string;
-  enabled: boolean;
-}
-
 const DAYS_OF_WEEK = [
   "monday",
   "tuesday",
@@ -66,13 +59,16 @@ const EditProfile: React.FC = () => {
   const [videoLinks, setVideoLinks] = useState<string[]>([]);
   const [newVideoLink, setNewVideoLink] = useState("");
 
-  // Availability state
-  const [availability, setAvailability] = useState<TimeSlot[]>(
+  // Availability state - support multiple slots per day
+  interface DayAvailability {
+    day: string;
+    slots: { start_time: string; end_time: string; id: string }[];
+  }
+
+  const [dayAvailability, setDayAvailability] = useState<DayAvailability[]>(
     DAYS_OF_WEEK.map((day) => ({
       day,
-      start_time: "06:00",
-      end_time: "20:00",
-      enabled: day !== "sunday",
+      slots: [],
     }))
   );
 
@@ -92,11 +88,9 @@ const EditProfile: React.FC = () => {
       }
       
       const trainerIdNum = parseInt(id);
-      console.log("🔄 Loading trainer profile for ID:", trainerIdNum);
       
       // Get trainer's profile using their ID from URL
       const data = await getTrainerProfile(trainerIdNum);
-      console.log("✅ Profile loaded:", data);
       
       setTrainerId(data.id);
       setProfileData(data);
@@ -132,28 +126,23 @@ const EditProfile: React.FC = () => {
       // Set video links
       setVideoLinks(data.videos || []);
 
-      // Set availability from API
+      // Set availability from API - group by day
       if (availabilityData.length > 0) {
-        const newAvailability = DAYS_OF_WEEK.map((day) => {
-          const slot = availabilityData.find(
-            (a) => a.day_of_week.toLowerCase() === day
-          );
-          if (slot) {
-            return {
-              day,
+        const grouped = DAYS_OF_WEEK.map((day) => {
+          const daySlots = availabilityData
+            .filter((a) => a.day_of_week.toLowerCase() === day && a.is_available)
+            .map((slot) => ({
               start_time: slot.start_time.slice(0, 5),
               end_time: slot.end_time.slice(0, 5),
-              enabled: slot.is_available,
-            };
-          }
+              id: `${day}-${slot.start_time}-${Date.now()}`,
+            }));
+          
           return {
             day,
-            start_time: "06:00",
-            end_time: "20:00",
-            enabled: false,
+            slots: daySlots,
           };
         });
-        setAvailability(newAvailability);
+        setDayAvailability(grouped);
       }
     } catch (error) {
       console.error("Error loading data:", error);
@@ -170,22 +159,56 @@ const EditProfile: React.FC = () => {
     );
   };
 
-  const handleAvailabilityToggle = (day: string) => {
-    setAvailability((prev) =>
-      prev.map((slot) =>
-        slot.day === day ? { ...slot, enabled: !slot.enabled } : slot
+  // Helper functions for managing availability
+  const addTimeSlot = (day: string) => {
+    setDayAvailability((prev) =>
+      prev.map((dayAvail) =>
+        dayAvail.day === day
+          ? {
+              ...dayAvail,
+              slots: [
+                ...dayAvail.slots,
+                {
+                  start_time: "09:00",
+                  end_time: "17:00",
+                  id: `${day}-${Date.now()}`,
+                },
+              ],
+            }
+          : dayAvail
       )
     );
   };
 
-  const handleTimeChange = (
+  const removeTimeSlot = (day: string, slotId: string) => {
+    setDayAvailability((prev) =>
+      prev.map((dayAvail) =>
+        dayAvail.day === day
+          ? {
+              ...dayAvail,
+              slots: dayAvail.slots.filter((slot) => slot.id !== slotId),
+            }
+          : dayAvail
+      )
+    );
+  };
+
+  const updateTimeSlot = (
     day: string,
+    slotId: string,
     field: "start_time" | "end_time",
     value: string
   ) => {
-    setAvailability((prev) =>
-      prev.map((slot) =>
-        slot.day === day ? { ...slot, [field]: value } : slot
+    setDayAvailability((prev) =>
+      prev.map((dayAvail) =>
+        dayAvail.day === day
+          ? {
+              ...dayAvail,
+              slots: dayAvail.slots.map((slot) =>
+                slot.id === slotId ? { ...slot, [field]: value } : slot
+              ),
+            }
+          : dayAvail
       )
     );
   };
@@ -253,15 +276,16 @@ const EditProfile: React.FC = () => {
         certificateFiles
       );
 
-      // Update availability
-      const availabilitySlots: AvailabilitySlot[] = availability
-        .filter((slot) => slot.enabled)
-        .map((slot) => ({
-          day_of_week: slot.day as AvailabilitySlot["day_of_week"],
-          start_time: slot.start_time,
-          end_time: slot.end_time,
-          is_available: true,
-        }));
+      // Update availability - convert to flat list
+      const availabilitySlots: AvailabilitySlot[] = dayAvailability
+        .flatMap((dayAvail) =>
+          dayAvail.slots.map((slot) => ({
+            day_of_week: dayAvail.day as AvailabilitySlot["day_of_week"],
+            start_time: slot.start_time,
+            end_time: slot.end_time,
+            is_available: true,
+          }))
+        );
 
       await bulkUpdateAvailability(availabilitySlots);
 
@@ -336,9 +360,6 @@ const EditProfile: React.FC = () => {
           {/* Profile Information */}
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-6 pb-4 border-b-2 border-gray-100">
-              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                <span className="text-xl">👤</span>
-              </div>
               <h2 className="text-2xl font-bold text-gray-900">Profile Information</h2>
             </div>
 
@@ -572,9 +593,6 @@ const EditProfile: React.FC = () => {
           {/* Certificate Files Upload */}
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-6 pb-4 border-b-2 border-gray-100">
-              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                <span className="text-xl">🎓</span>
-              </div>
               <h2 className="text-2xl font-bold text-gray-900">Certifications</h2>
             </div>
             <div className="mb-4 p-6 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
@@ -655,9 +673,6 @@ const EditProfile: React.FC = () => {
           {/* Training Videos */}
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-6 pb-4 border-b-2 border-gray-100">
-              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                <span className="text-xl">🎥</span>
-              </div>
               <h2 className="text-2xl font-bold text-gray-900">Training Videos</h2>
             </div>
 
@@ -731,64 +746,104 @@ const EditProfile: React.FC = () => {
 
           {/* Availability Schedule */}
           <div className="mb-8">
-            <div className="flex items-center gap-3 mb-6 pb-4 border-b-2 border-gray-100">
-              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                <span className="text-xl">📅</span>
-              </div>
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b-2 border-gray-100">
               <h2 className="text-2xl font-bold text-gray-900">Availability Schedule</h2>
             </div>
-
+            
             <div className="space-y-3">
-              {availability.map((slot) => (
-                <div
-                  key={slot.day}
-                  className={`flex flex-col md:flex-row md:items-center gap-4 p-4 rounded-xl border-2 transition-all ${
-                    slot.enabled
-                      ? "border-green-300 bg-green-50"
-                      : "border-gray-200 bg-gray-50"
-                  }`}
-                >
-                  <div className="w-full md:w-40">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={slot.enabled}
-                        onChange={() => handleAvailabilityToggle(slot.day)}
-                        className="w-5 h-5 text-green-600 rounded focus:ring-2 focus:ring-green-500"
-                      />
-                      <span className="font-bold text-gray-900">
-                        {DAY_LABELS[slot.day]}
-                      </span>
-                    </label>
-                  </div>
-
-                  {slot.enabled ? (
-                    <div className="flex flex-1 items-center gap-3">
-                      <input
-                        type="time"
-                        value={slot.start_time}
-                        onChange={(e) =>
-                          handleTimeChange(slot.day, "start_time", e.target.value)
-                        }
-                        className="flex-1 px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
-                      <span className="text-gray-600 font-medium">to</span>
-                      <input
-                        type="time"
-                        value={slot.end_time}
-                        onChange={(e) =>
-                          handleTimeChange(slot.day, "end_time", e.target.value)
-                        }
-                        className="flex-1 px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
+              {dayAvailability.map((dayAvail) => {
+                const hasSlots = dayAvail.slots.length > 0;
+                
+                return (
+                  <div
+                    key={dayAvail.day}
+                    className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-gray-300 transition-colors"
+                  >
+                    {/* Day Header - Always Visible */}
+                    <div className="flex items-center justify-between p-4 bg-gray-50">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold ${
+                          hasSlots ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
+                        }`}>
+                          {DAY_LABELS[dayAvail.day].substring(0, 3)}
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-gray-900">{DAY_LABELS[dayAvail.day]}</h3>
+                          <p className="text-xs text-gray-500">
+                            {hasSlots ? `${dayAvail.slots.length} slot${dayAvail.slots.length !== 1 ? 's' : ''}` : 'Unavailable'}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => addTimeSlot(dayAvail.day)}
+                        className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+                      >
+                        + Add Time
+                      </button>
                     </div>
-                  ) : (
-                    <span className="text-gray-500 text-sm italic">
-                      Check the box to set availability for this day
-                    </span>
-                  )}
+
+                    {/* Time Slots Section */}
+                    {hasSlots && (
+                      <div className="p-4 space-y-2 bg-white">
+                        {dayAvail.slots.map((slot, slotIndex) => (
+                          <div
+                            key={slot.id}
+                            className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
+                          >
+                            <span className="text-sm font-medium text-gray-500 w-6">#{slotIndex + 1}</span>
+                            
+                            <input
+                              type="time"
+                              value={slot.start_time}
+                              onChange={(e) =>
+                                updateTimeSlot(dayAvail.day, slot.id, "start_time", e.target.value)
+                              }
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm font-medium"
+                            />
+                            
+                            <span className="text-gray-400">—</span>
+                            
+                            <input
+                              type="time"
+                              value={slot.end_time}
+                              onChange={(e) =>
+                                updateTimeSlot(dayAvail.day, slot.id, "end_time", e.target.value)
+                              }
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm font-medium"
+                            />
+                            
+                            <button
+                              type="button"
+                              onClick={() => removeTimeSlot(dayAvail.day, slot.id)}
+                              className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Quick Summary */}
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-sm text-blue-900 font-medium mb-1">
+                    {dayAvailability.filter(d => d.slots.length > 0).length} days available • {dayAvailability.reduce((acc, d) => acc + d.slots.length, 0)} total slots
+                  </p>
+                  <p className="text-xs text-blue-700">
+                    Clients can only book from your available time slots. You can add multiple slots per day for split schedules.
+                  </p>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
 

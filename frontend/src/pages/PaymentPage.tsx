@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import toast, { Toaster } from "react-hot-toast";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useAuth } from "@/hooks/useAuth";
 import { FaCreditCard, FaLock, FaUser, FaCalendar, FaClock, FaMapMarkerAlt, FaInfoCircle } from "react-icons/fa";
 import { HiArrowLeft } from "react-icons/hi";
 
@@ -22,6 +23,7 @@ interface BookingDetails {
 export default function PaymentPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const bookingDetails = location.state?.bookingDetails as BookingDetails | undefined;
 
   const [processing, setProcessing] = useState(false);
@@ -48,18 +50,24 @@ export default function PaymentPage() {
   const total = sessionFee + platformFee + processingFee;
 
   const handleCompletePayment = async () => {
+    if (!user) {
+      toast.error("You must be logged in to complete booking");
+      return;
+    }
+
     try {
       setProcessing(true);
 
       // Create booking in database (status will be "pending" by default)
       const newBooking = await createBooking({
+        client: user.id,
         trainer: bookingDetails.trainer_id,
         date: bookingDetails.date,
         start_time: bookingDetails.start_time,
         end_time: bookingDetails.end_time,
         session_type: bookingDetails.session_type,
         price: Number(bookingDetails.price),
-        notes: bookingDetails.notes,
+        notes: bookingDetails.notes || "",
       });
 
       // Show success toast
@@ -97,17 +105,29 @@ export default function PaymentPage() {
         navigate("/client-dashboard");
       }, 1500);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error completing payment:", error);
       
-      // Show error toast
-      toast.error(
-        "Booking failed. Please try again or contact support.",
-        {
-          duration: 4000,
-          position: "top-center",
+      // Extract detailed error message
+      let errorMessage = "Booking failed. Please try again or contact support.";
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        if (typeof errorData === 'object') {
+          // Extract error messages from the response
+          const errors = Object.entries(errorData)
+            .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
+            .join('\n');
+          errorMessage = errors || errorMessage;
+        } else {
+          errorMessage = String(errorData);
         }
-      );
+      }
+      
+      // Show error toast
+      toast.error(errorMessage, {
+        duration: 6000,
+        position: "top-center",
+      });
       
       setProcessing(false);
     }

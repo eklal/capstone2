@@ -22,6 +22,15 @@ export interface Booking {
 export interface BookingFilters {
   status?: "pending" | "confirmed" | "cancelled" | "completed";
   trainer_id?: number;
+  page?: number;
+  page_size?: number;
+}
+
+export interface PaginatedBookingsResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Booking[];
 }
 
 // Get all bookings (filtered by user role automatically)
@@ -32,6 +41,28 @@ export const getBookings = async (filters?: BookingFilters): Promise<Booking[]> 
     const params = new URLSearchParams();
     if (filters.status) params.append("status", filters.status);
     if (filters.trainer_id) params.append("trainer_id", filters.trainer_id.toString());
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+  }
+  
+  const response = await api.get(url);
+  // Backend may return either an array (no pagination) or a paginated object.
+  const data = response.data as Booking[] | PaginatedBookingsResponse;
+  return Array.isArray(data) ? data : data.results;
+};
+
+// Get paginated bookings
+export const getPaginatedBookings = async (filters?: BookingFilters): Promise<PaginatedBookingsResponse> => {
+  let url = "/api/bookings/";
+  
+  if (filters) {
+    const params = new URLSearchParams();
+    if (filters.status) params.append("status", filters.status);
+    if (filters.trainer_id) params.append("trainer_id", filters.trainer_id.toString());
+    if (filters.page) params.append("page", filters.page.toString());
+    if (filters.page_size) params.append("page_size", filters.page_size.toString());
     
     if (params.toString()) {
       url += `?${params.toString()}`;

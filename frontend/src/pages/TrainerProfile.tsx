@@ -41,12 +41,14 @@ const TrainerProfile: React.FC = () => {
         return;
       }
 
-      const trainerId = parseInt(id);
-      const [profileData, availabilityData] = await Promise.all([
-        getTrainerProfile(trainerId),
-        getTrainerAvailability(trainerId),
-      ]);
+      const urlId = parseInt(id);
+      
+      // First, fetch the trainer profile (can use either user_id or trainer_profile_id)
+      const profileData = await getTrainerProfile(urlId);
       setProfile(profileData);
+      
+      // Then fetch availability using the trainer profile ID
+      const availabilityData = await getTrainerAvailability(profileData.id);
       setAvailability(availabilityData);
     } catch (error) {
       console.error("Error loading profile:", error);
@@ -79,10 +81,12 @@ const TrainerProfile: React.FC = () => {
         slot.day_of_week.toLowerCase() === day.toLowerCase() &&
         slot.is_available
     );
-    if (slots.length === 0) return "Unavailable";
+    if (slots.length === 0) return null;
 
-    const slot = slots[0];
-    return `${formatTime(slot.start_time)} - ${formatTime(slot.end_time)}`;
+    // Return all time slots for the day
+    return slots.map(slot => 
+      `${formatTime(slot.start_time)} - ${formatTime(slot.end_time)}`
+    );
   };
 
   if (loading) {
@@ -381,7 +385,7 @@ const TrainerProfile: React.FC = () => {
                   Update
                 </button>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {[
                   "Monday",
                   "Tuesday",
@@ -391,25 +395,34 @@ const TrainerProfile: React.FC = () => {
                   "Saturday",
                   "Sunday",
                 ].map((day) => {
-                  const displayTime = getAvailabilityDisplay(day);
-                  const isAvailable = displayTime !== "Unavailable";
+                  const timeSlots = getAvailabilityDisplay(day);
+                  const isAvailable = timeSlots !== null && timeSlots.length > 0;
+                  
                   return (
                     <div
                       key={day}
-                      className={`flex justify-between items-center p-3 rounded-lg ${
+                      className={`p-3 rounded-lg ${
                         isAvailable
                           ? "bg-green-50 border-2 border-green-200"
                           : "bg-gray-50 border-2 border-gray-200"
                       }`}
                     >
-                      <span className="font-semibold text-gray-900">{day}</span>
-                      <span
-                        className={`text-sm font-medium ${
+                      <div className="flex justify-between items-start">
+                        <span className="font-semibold text-gray-900">{day}</span>
+                        <div className={`text-sm font-medium text-right ${
                           isAvailable ? "text-green-700" : "text-gray-500"
-                        }`}
-                      >
-                        {displayTime}
-                      </span>
+                        }`}>
+                          {isAvailable ? (
+                            <div className="space-y-1">
+                              {timeSlots.map((slot, index) => (
+                                <div key={index}>{slot}</div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span>Unavailable</span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
