@@ -1,0 +1,132 @@
+/* Featured Trainers Carousel Styling */
+
+.featured-trainers-swiper {
+  position: relative;
+}
+
+/* Custom Navigation Buttons */
+.custom-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border-radius: 50%;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 2px solid rgba(220, 38, 38, 0.15);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.custom-nav-prev {
+  left: -60px;
+}
+
+.custom-nav-next {
+  right: -60px;
+}
+
+.custom-nav-btn:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  box-shadow: 0 8px 24px rgba(220, 38, 38, 0.35);
+  transform: translateY(-50%) scale(1.15);
+  border-color: #dc2626;
+}
+
+/* Custom Arrow Icon */
+.custom-arrow-icon {
+  font-size: 24px;
+  color: #dc2626;
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 2px 4px rgba(220, 38, 38, 0.2));
+}
+
+.custom-nav-btn:hover .custom-arrow-icon {
+  color: white;
+  filter: drop-shadow(0 2px 8px rgba(255, 255, 255, 0.4));
+}
+
+.custom-nav-btn:active {
+  transform: translateY(-50%) scale(1.05);
+}
+
+/* Pagination Bullets */
+.featured-trainers-swiper .swiper-pagination-bullet {
+  width: 12px;
+  height: 12px;
+  background: #cbd5e1;
+  opacity: 1;
+  transition: all 0.3s ease;
+}
+
+.featured-trainers-swiper .swiper-pagination-bullet-active {
+  background: #dc2626;
+  width: 32px;
+  border-radius: 6px;
+}
+
+.featured-trainers-swiper .swiper-pagination {
+  bottom: 0 !important;
+}
+
+/* Smooth slide transitions */
+.featured-trainers-swiper .swiper-slide {
+  height: auto;
+  display: flex;
+  align-items: stretch;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .custom-nav-prev {
+    left: -40px;
+  }
+
+  .custom-nav-next {
+    right: -40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .custom-nav-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .custom-arrow-icon {
+    font-size: 20px;
+  }
+
+  .custom-nav-prev {
+    left: -20px;
+  }
+
+  .custom-nav-next {
+    right: -20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .custom-nav-btn {
+    width: 40px;
+    height: 40px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .custom-arrow-icon {
+    font-size: 18px;
+  }
+
+  .custom-nav-prev {
+    left: -10px;
+  }
+
+  .custom-nav-next {
+    right: -10px;
+  }
+}

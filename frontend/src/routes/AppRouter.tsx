@@ -13,6 +13,8 @@ import CreateEditGig from "@/pages/CreateEditGig";
 import TrainerProfile from "@/pages/TrainerProfile";
 import EditProfile from "@/pages/EditProfile";
 import TrainerDetailPage from "@/pages/TrainerDetailPage";
+import PaymentPage from "@/pages/PaymentPage";
+import TrainerBookings from "@/pages/TrainerBookings";
 
 import TrainerPageContainer from "@/components/layout/TrainerPageContainer";
 import PublicRoute from "@/components/routes/PublicRoute";
@@ -57,6 +59,14 @@ const AppRouter: React.FC = () => {
             </ProtectedRoute>
           } 
         />
+        <Route 
+          path="/payment" 
+          element={
+            <ProtectedRoute requiredRole="client">
+              <PaymentPage />
+            </ProtectedRoute>
+          } 
+        />
 
         {/* Protected Trainer Routes - Require authentication and trainer role */}
         <Route 
@@ -73,7 +83,7 @@ const AppRouter: React.FC = () => {
           <Route path="/trainer/gigs/new" element={<CreateEditGig />} />
           <Route path="/trainer/gigs/:gigId/edit" element={<CreateEditGig />} />
           <Route path="/trainer/gigs/:gigId" element={<GigPreviewPage />} />
-          <Route path="/trainer-bookings" element={<Sample />} />
+          <Route path="/trainer-bookings" element={<TrainerBookings />} />
           <Route path="/trainer-income" element={<Sample />} />
           <Route path="/trainer-settings" element={<Sample />} />
         </Route>

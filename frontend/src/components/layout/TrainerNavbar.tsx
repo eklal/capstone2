@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { FaDumbbell, FaBell, FaUser } from "react-icons/fa";
 
 const TrainerNavbar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -12,7 +13,7 @@ const TrainerNavbar: React.FC = () => {
           <div className="flex items-center gap-4">
             <Link to="/" className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-md bg-black flex items-center justify-center text-white">
-                🏋️
+                <FaDumbbell />
               </div>
               <span className="text-lg font-semibold">TrainerHub</span>
             </Link>
@@ -20,13 +21,13 @@ const TrainerNavbar: React.FC = () => {
 
           <div className="flex items-center gap-4">
             <button className="p-2 rounded-full hover:bg-gray-100">
-              🔔
+              <FaBell className="text-gray-600" />
             </button>
             
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                  <span className="text-sm">👤</span>
+                  <FaUser className="text-sm text-gray-600" />
                 </div>
                 <span className="text-sm font-medium hidden sm:block">{user?.username}</span>
               </div>

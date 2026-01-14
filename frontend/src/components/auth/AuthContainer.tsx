@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
+import { FaDumbbell } from "react-icons/fa";
 
 import AuthToggle from "./AuthToggle";
 import SignInForm from "./SignInForm";
@@ -21,38 +22,49 @@ const AuthContainer: React.FC = () => {
 
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4  pt-24 pb-24">
-            <div className="text-center mb-8">
-                <div className="bg-black text-white w-12 h-12 flex items-center justify-center rounded-lg mx-auto mb-4">
-                    <span className="font-bold text-xl">🏋️</span>
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-100 px-4 py-24 relative overflow-hidden">
+            {/* Background decorations */}
+            <div className="absolute inset-0 opacity-5">
+                <div className="absolute top-20 left-10 w-96 h-96 bg-[var(--primary)] rounded-full blur-3xl"></div>
+                <div className="absolute bottom-20 right-10 w-96 h-96 bg-[var(--primary)] rounded-full blur-3xl"></div>
+            </div>
+
+            <div className="relative z-10 w-full max-w-md">
+                {/* Header */}
+                <div className="text-center mb-8">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-xl mb-6 group hover:scale-110 transition-transform">
+                        <FaDumbbell className="text-white text-2xl" />
+                    </div>
+                    <h1 className="text-4xl font-extrabold text-gray-900 mb-2">
+                        Welcome to <span className="text-[var(--primary)]">Boutique Fitness</span>
+                    </h1>
+                    <p className="text-gray-600 text-base">
+                        {mode === "signin" 
+                            ? "Sign in to continue your fitness journey" 
+                            : "Create an account to get started"}
+                    </p>
                 </div>
-                <h1 className="text-2xl font-semibold">Welcome to <span className="text-black font-bold">Boutique Fitness</span></h1>
-                <p className="text-gray-600 text-sm">
-                    Sign in to your account or create a new one
+
+                {/* Toggle */}
+                <AuthToggle mode={mode} setMode={setMode} />
+
+                {/* Form Container */}
+                <div className="relative mt-6 w-full overflow-hidden rounded-2xl shadow-2xl border-2 border-gray-100 bg-white">
+                    <div className="flex transition-transform duration-500">
+                        <div className="w-full p-8 md:p-10">
+                            {mode === "signin" ? <SignInForm /> : <SignUpForm />}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer Link */}
+                <p className="mt-6 text-center text-sm text-gray-600">
+                    Are you a fitness trainer?{" "}
+                    <Link to="/register-trainer" className="text-[var(--primary)] font-bold hover:underline">
+                        Join as a Trainer
+                    </Link>
                 </p>
             </div>
-
-            {/* Toggle */}
-            <AuthToggle mode={mode} setMode={setMode} />
-
-            {/* Animated Slider */}
-            <div className="relative mt-6 w-full max-w-md overflow-hidden rounded-xl shadow border bg-white">
-                <div
-                    className="flex transition-transform duration-500"
-                    // style={{ transform: mode === "signin" ? "translateX(0%)" : "translateX(-50%)" }}
-                >
-                    <div className="w-full p-12">
-                        {mode === "signin" ? <SignInForm /> : <SignUpForm />}
-                    </div>
-
-
-                </div>
-            </div>
-
-            <p className="mt-6 text-sm text-gray-600">
-                Are you a fitness trainer?{" "}
-                <a className="text-black font-semibold cursor-pointer">Join as a Trainer</a>
-            </p>
         </div>
     );
 };
