@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths, getDay } from "date-fns";
-import { getTrainerAvailability } from "@/api/availability";
+import { getTrainerAvailability, getAvailableSlots } from "@/api/availability";
 import { getBookings } from "@/api/bookings";
-import type { AvailabilitySlot } from "@/api/availability";
+import type { AvailabilitySlot, AvailableSlot } from "@/api/availability";
 import type { Booking } from "@/api/bookings";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -21,7 +21,9 @@ export default function BookingCalendar({ trainerId, trainerName, hourlyRate }: 
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingSlots, setLoadingSlots] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [bookingNotes, setBookingNotes] = useState("");
 
@@ -34,6 +36,14 @@ export default function BookingCalendar({ trainerId, trainerName, hourlyRate }: 
     loadAvailabilityAndBookings();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trainerId]);
+
+  // Load available slots when date is selected
+  useEffect(() => {
+    if (selectedDate) {
+      loadAvailableSlots(selectedDate);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, trainerId]);
 
   const loadAvailabilityAndBookings = async () => {
     try {
@@ -51,45 +61,22 @@ export default function BookingCalendar({ trainerId, trainerName, hourlyRate }: 
     }
   };
 
-  // Get available time slots for selected date
-  const getAvailableTimesForDate = (date: Date) => {
-    const dayName = format(date, "EEEE").toLowerCase();
-    const dateString = format(date, "yyyy-MM-dd");
-
-    // Find availability for this day
-    const dayAvailability = availability.filter(
-      (slot) => slot.day_of_week === dayName && slot.is_available
-    );
-
-    if (dayAvailability.length === 0) return [];
-
-    // Generate hourly slots
-    const slots: string[] = [];
-    dayAvailability.forEach((slot) => {
-      const start = parseInt(slot.start_time.split(":")[0]);
-      const end = parseInt(slot.end_time.split(":")[0]);
-
-      for (let hour = start; hour < end; hour++) {
-        const timeSlot = `${hour.toString().padStart(2, "0")}:00`;
-        
-        // Check if this time is already booked
-        const isBooked = bookings.some(
-          (booking) =>
-            booking.date === dateString &&
-            booking.start_time === timeSlot &&
-            booking.status !== "cancelled"
-        );
-
-        if (!isBooked) {
-          slots.push(timeSlot);
-        }
-      }
-    });
-
-    return slots.sort();
+  const loadAvailableSlots = async (date: Date) => {
+    try {
+      setLoadingSlots(true);
+      const dateString = format(date, "yyyy-MM-dd");
+      const response = await getAvailableSlots(trainerId, dateString);
+      setAvailableSlots(response.available_slots);
+    } catch (error) {
+      console.error("Error loading available slots:", error);
+      setAvailableSlots([]);
+    } finally {
+      setLoadingSlots(false);
+    }
   };
 
-  const availableTimes = selectedDate ? getAvailableTimesForDate(selectedDate) : [];
+  // Extract time strings from available slots
+  const availableTimes = availableSlots.map(slot => slot.start_time);
 
   // Check if a date has any availability
   const hasAvailability = (date: Date) => {
@@ -231,7 +218,7 @@ export default function BookingCalendar({ trainerId, trainerName, hourlyRate }: 
           <h4 className="font-semibold mb-3">
             Available Times for {format(selectedDate, "dd/MM/yyyy")}
           </h4>
-          {loading ? (
+          {loadingSlots ? (
             <div className="text-center py-4 text-gray-500">Loading times...</div>
           ) : availableTimes.length > 0 ? (
             <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto">

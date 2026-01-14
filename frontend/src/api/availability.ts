@@ -48,3 +48,25 @@ export const bulkUpdateAvailability = async (availability: AvailabilitySlot[]): 
   });
   return response.data;
 };
+
+// Get available time slots for a specific trainer and date
+export interface AvailableSlot {
+  start_time: string;
+  end_time: string;
+  available: boolean;
+}
+
+export interface AvailableSlotsResponse {
+  date: string;
+  day_of_week: string;
+  trainer_id: number;
+  trainer_name: string;
+  available_slots: AvailableSlot[];
+}
+
+export const getAvailableSlots = async (trainerId: number, date: string): Promise<AvailableSlotsResponse> => {
+  const response = await api.get(`/api/bookings/availability/trainer/${trainerId}/slots/`, {
+    params: { date }
+  });
+  return response.data;
+};

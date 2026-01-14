@@ -30,11 +30,6 @@ const TrainerDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showBookingModal, setShowBookingModal] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedTime, setSelectedTime] = useState<string>("");
-  const [selectedEndTime, setSelectedEndTime] = useState<string>("");
-  const [bookingNotes, setBookingNotes] = useState("");
-  const [bookingLoading, setBookingLoading] = useState(false);
   const [playingVideo, setPlayingVideo] = useState<number | null>(null);
 
   // Extract YouTube video ID from URL
@@ -62,36 +57,6 @@ const TrainerDetailPage: React.FC = () => {
       setError("Failed to load trainer profile");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleBookSession = async () => {
-    if (!selectedDate || !selectedTime || !trainer) return;
-
-    try {
-      setBookingLoading(true);
-      const dateString = selectedDate.toISOString().split("T")[0];
-
-      await createBsooking({
-        trainer: trainerId,
-        session_type: "Personal Training",
-        date: dateString,
-        start_time: selectedTime,
-        end_time: selectedEndTime,
-        price: parseFloat(trainer.hourly_rate.toString()),
-        notes: bookingNotes,
-      });
-
-      alert("Booking successful! The trainer will review your request.");
-      setShowBookingModal(false);
-      setBookingNotes("");
-      // Refresh the calendar
-      window.location.reload();
-    } catch (error) {
-      console.error("Booking error:", error);
-      alert("Failed to create booking. Please try again.");
-    } finally {
-      setBookingLoading(false);
     }
   };
 
@@ -471,74 +436,6 @@ const TrainerDetailPage: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Booking Modal */}
-      {showBookingModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl">
-            <h2 className="text-3xl font-extrabold text-gray-900 mb-6">Confirm Booking</h2>
-
-            <div className="space-y-4 mb-6 bg-gray-50 p-5 rounded-xl">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 font-medium">Trainer:</span>
-                <span className="font-bold text-gray-900">{trainer.user_name}</span>
-              </div>
-              {selectedDate && (
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600 font-medium">Date:</span>
-                  <span className="font-bold text-gray-900">
-                    {selectedDate.toLocaleDateString("en-US", {
-                      weekday: "long",
-                      month: "long",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </span>
-                </div>
-              )}
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 font-medium">Time:</span>
-                <span className="font-bold text-gray-900">
-                  {selectedTime} - {selectedEndTime}
-                </span>
-              </div>
-              <div className="flex justify-between items-center pt-3 border-t-2 border-gray-200">
-                <span className="text-gray-600 font-medium">Price:</span>
-                <span className="font-bold text-[var(--primary)] text-xl">${trainer.hourly_rate}</span>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-bold text-gray-700 mb-3">
-                Notes (optional)
-              </label>
-              <textarea
-                value={bookingNotes}
-                onChange={(e) => setBookingNotes(e.target.value)}
-                placeholder="Any special requests or goals for this session?"
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[var(--primary)] focus:ring-4 focus:ring-red-100 transition-all h-24 resize-none"
-              />
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowBookingModal(false)}
-                className="flex-1 border-2 border-gray-300 py-3 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-all"
-                disabled={bookingLoading}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleBookSession}
-                disabled={bookingLoading}
-                className="flex-1 bg-[var(--primary)] text-white py-3 rounded-xl font-bold hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {bookingLoading ? "Booking..." : "Confirm Booking"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <Footer />
     </div>

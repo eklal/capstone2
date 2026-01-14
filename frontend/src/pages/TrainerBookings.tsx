@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { getBookings, updateBookingStatus, type Booking } from "@/api/bookings";
+import { getPaginatedBookings, updateBookingStatus, type Booking } from "@/api/bookings";
+import { getTrainerProfile } from "@/api/trainers";
 import { useAuth } from "@/hooks/useAuth";
 import { format, parseISO } from "date-fns";
 import {
   FaCalendarAlt,
   FaClock,
   FaUser,
-  FaDollarSign,
-  FaInfoCircle,
 } from "react-icons/fa";
 import { FiCheckCircle, FiXCircle, FiClock, FiCheck } from "react-icons/fi";
 import toast, { Toaster } from "react-hot-toast";
@@ -15,24 +14,75 @@ import toast, { Toaster } from "react-hot-toast";
 export default function TrainerBookings() {
   const { user } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [allBookings, setAllBookings] = useState<Booking[]>([]); // For stats
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "confirmed" | "cancelled" | "completed">("all");
+  const [trainerProfileId, setTrainerProfileId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const itemsPerPage = 10;
 
   useEffect(() => {
-    loadBookings();
+    loadTrainerProfile();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
+  useEffect(() => {
+    if (trainerProfileId) {
+      loadAllBookingsForStats();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trainerProfileId]);
+
+  useEffect(() => {
+    if (trainerProfileId) {
+      loadBookings();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trainerProfileId, filter, currentPage]);
+
+  const loadTrainerProfile = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const profile = await getTrainerProfile(user.id);
+      setTrainerProfileId(profile.id);
+    } catch (error) {
+      console.error("Error loading trainer profile:", error);
+      toast.error("Failed to load trainer profile");
+    }
+  };
+
+  // Load all bookings for statistics (without pagination)
+  const loadAllBookingsForStats = async () => {
+    if (!trainerProfileId) return;
+    
+    try {
+      const response = await getPaginatedBookings({ 
+        trainer_id: trainerProfileId,
+        page_size: 1000 // Get all for stats
+      });
+      setAllBookings(response.results);
+    } catch (error) {
+      console.error("Error loading bookings for stats:", error);
+    }
+  };
+
+  // Load paginated bookings
   const loadBookings = async () => {
+    if (!trainerProfileId) return;
+    
     try {
       setLoading(true);
-      const data = await getBookings({ trainer_id: user?.id });
-      const sorted = data.sort((a, b) => {
-        const dateA = new Date(`${a.date} ${a.start_time}`);
-        const dateB = new Date(`${b.date} ${b.start_time}`);
-        return dateB.getTime() - dateA.getTime();
+      const response = await getPaginatedBookings({ 
+        trainer_id: trainerProfileId,
+        status: filter !== "all" ? filter : undefined,
+        page: currentPage,
+        page_size: itemsPerPage
       });
-      setBookings(sorted);
+      
+      setBookings(response.results);
+      setTotalCount(response.count);
     } catch (error) {
       console.error("Error loading bookings:", error);
       toast.error("Failed to load bookings");
@@ -80,14 +130,24 @@ export default function TrainerBookings() {
     }
   };
 
-  const filteredBookings = filter === "all" ? bookings : bookings.filter((b) => b.status === filter);
-
+  // Calculate stats from all bookings
   const stats = {
-    total: bookings.length,
-    pending: bookings.filter((b) => b.status === "pending").length,
-    confirmed: bookings.filter((b) => b.status === "confirmed").length,
-    completed: bookings.filter((b) => b.status === "completed").length,
+    total: allBookings.length,
+    pending: allBookings.filter((b) => b.status === "pending").length,
+    confirmed: allBookings.filter((b) => b.status === "confirmed").length,
+    completed: allBookings.filter((b) => b.status === "completed").length,
+    cancelled: allBookings.filter((b) => b.status === "cancelled").length,
   };
+
+  // Pagination (server-side)
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalCount);
+
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -123,13 +183,13 @@ export default function TrainerBookings() {
 
       {/* Filter Tabs */}
       <div className="bg-white rounded-2xl shadow-md mb-8 overflow-hidden">
-        <div className="flex overflow-x-auto">
+          <div className="flex overflow-x-auto">
           {[
-            { key: "all", label: "All", count: bookings.length },
+            { key: "all", label: "All", count: stats.total },
             { key: "pending", label: "Pending", count: stats.pending },
             { key: "confirmed", label: "Confirmed", count: stats.confirmed },
             { key: "completed", label: "Completed", count: stats.completed },
-            { key: "cancelled", label: "Cancelled", count: bookings.filter(b => b.status === "cancelled").length },
+            { key: "cancelled", label: "Cancelled", count: stats.cancelled },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -149,154 +209,201 @@ export default function TrainerBookings() {
         </div>
       </div>
 
-      {/* Bookings List */}
-      {loading ? (
-        <div className="grid grid-cols-1 gap-6">
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="bg-white rounded-2xl shadow-md p-6 h-48 animate-pulse"
-            ></div>
-          ))}
-        </div>
-      ) : filteredBookings.length > 0 ? (
-        <div className="grid grid-cols-1 gap-6">
-          {filteredBookings.map((booking) => (
-            <div
-              key={booking.id}
-              className="bg-white rounded-2xl shadow-md p-6 border border-gray-100 hover:shadow-xl transition-all"
-            >
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                {/* Left Section - Booking Info */}
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl">
-                        <FaUser />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900">
-                          {booking.client_name || `Client ${booking.client}`}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          Booking #{booking.id}
-                        </p>
-                      </div>
-                    </div>
-                    <span
-                      className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold border-2 ${getStatusClasses(
-                        booking.status
-                      )}`}
-                    >
-                      {getStatusIcon(booking.status)}
-                      {booking.status.charAt(0).toUpperCase() +
-                        booking.status.slice(1)}
-                    </span>
-                  </div>
-
-                  {/* Booking Details Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm mb-4">
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <FaCalendarAlt className="text-gray-500" />
-                      <div>
-                        <p className="text-xs text-gray-500">Date</p>
-                        <p className="font-semibold">
-                          {format(parseISO(booking.date), "MMM dd, yyyy")}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <FaClock className="text-gray-500" />
-                      <div>
-                        <p className="text-xs text-gray-500">Time</p>
-                        <p className="font-semibold">
-                          {booking.start_time} - {booking.end_time}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <FaDollarSign className="text-gray-500" />
-                      <div>
-                        <p className="text-xs text-gray-500">Price</p>
-                        <p className="font-semibold">
+      {/* Bookings Table */}
+      <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+        {loading ? (
+          <div className="p-8">
+            <div className="animate-pulse space-y-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-16 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
+        ) : bookings.length > 0 ? (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b-2 border-gray-200">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      ID
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Client
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Date & Time
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Session Type
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Price
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {bookings.map((booking) => (
+                    <tr key={booking.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm font-bold text-gray-900">
+                          #{booking.id}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm">
+                            <FaUser />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">
+                              {booking.client_name || `Client ${booking.client}`}
+                            </p>
+                            {booking.client_email && (
+                              <p className="text-xs text-gray-500">
+                                {booking.client_email}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm">
+                          <p className="font-semibold text-gray-900 flex items-center gap-2">
+                            <FaCalendarAlt className="text-gray-400" />
+                            {format(parseISO(booking.date), "MMM dd, yyyy")}
+                          </p>
+                          <p className="text-gray-600 flex items-center gap-2 mt-1">
+                            <FaClock className="text-gray-400" />
+                            {booking.start_time} - {booking.end_time}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm text-gray-900">
+                          {booking.session_type}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm font-bold text-gray-900">
                           ${Number(booking.price).toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <FaInfoCircle className="text-gray-500" />
-                      <div>
-                        <p className="text-xs text-gray-500">Session Type</p>
-                        <p className="font-semibold">{booking.session_type}</p>
-                      </div>
-                    </div>
-                  </div>
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border-2 ${getStatusClasses(
+                            booking.status
+                          )}`}
+                        >
+                          {getStatusIcon(booking.status)}
+                          {booking.status.charAt(0).toUpperCase() +
+                            booking.status.slice(1)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex gap-2">
+                          {booking.status === "pending" && (
+                            <>
+                              <button
+                                onClick={() => handleStatusChange(booking.id!, "confirmed")}
+                                className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-semibold"
+                                title="Accept"
+                              >
+                                Accept
+                              </button>
+                              <button
+                                onClick={() => handleStatusChange(booking.id!, "cancelled")}
+                                className="px-3 py-1.5 border border-red-500 text-red-500 rounded-lg hover:bg-red-50 transition-colors text-xs font-semibold"
+                                title="Decline"
+                              >
+                                Decline
+                              </button>
+                            </>
+                          )}
+                          {booking.status === "confirmed" && (
+                            <button
+                              onClick={() => handleStatusChange(booking.id!, "completed")}
+                              className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-semibold"
+                            >
+                              Complete
+                            </button>
+                          )}
+                          {(booking.status === "completed" || booking.status === "cancelled") && (
+                            <span className="px-3 py-1.5 text-gray-500 text-xs">
+                              -
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-                  {/* Notes */}
-                  {booking.notes && (
-                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                      <p className="text-xs text-gray-500 font-semibold mb-1">
-                        Client Notes:
-                      </p>
-                      <p className="text-sm text-gray-700">{booking.notes}</p>
-                    </div>
-                  )}
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between bg-gray-50">
+                <div className="text-sm text-gray-600">
+                  Showing {startIndex + 1} to {endIndex} of{" "}
+                  {totalCount} bookings
                 </div>
-
-                {/* Right Section - Actions */}
-                <div className="flex lg:flex-col gap-3 lg:min-w-[180px]">
-                  {booking.status === "pending" && (
-                    <>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Previous
+                  </button>
+                  <div className="flex gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                       <button
-                        onClick={() => handleStatusChange(booking.id!, "confirmed")}
-                        className="flex-1 lg:flex-none px-5 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold text-sm flex items-center justify-center gap-2 shadow-lg"
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                          currentPage === page
+                            ? "bg-[var(--primary)] text-white"
+                            : "border border-gray-300 text-gray-700 hover:bg-gray-100"
+                        }`}
                       >
-                        <FiCheckCircle /> Accept
+                        {page}
                       </button>
-                      <button
-                        onClick={() => handleStatusChange(booking.id!, "cancelled")}
-                        className="flex-1 lg:flex-none px-5 py-3 border-2 border-red-500 text-red-500 rounded-xl hover:bg-red-50 transition-colors font-semibold text-sm flex items-center justify-center gap-2"
-                      >
-                        <FiXCircle /> Decline
-                      </button>
-                    </>
-                  )}
-                  {booking.status === "confirmed" && (
-                    <button
-                      onClick={() => handleStatusChange(booking.id!, "completed")}
-                      className="w-full px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold text-sm flex items-center justify-center gap-2 shadow-lg"
-                    >
-                      <FiCheckCircle /> Mark Complete
-                    </button>
-                  )}
-                  {(booking.status === "completed" || booking.status === "cancelled") && (
-                    <button
-                      disabled
-                      className="w-full px-5 py-3 bg-gray-300 text-gray-600 rounded-xl font-semibold text-sm cursor-not-allowed"
-                    >
-                      {booking.status === "completed" ? "Completed" : "Cancelled"}
-                    </button>
-                  )}
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Next
+                  </button>
                 </div>
               </div>
+            )}
+          </>
+        ) : (
+          <div className="p-12 text-center">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+              <FaCalendarAlt className="text-4xl text-gray-400" />
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl shadow-md p-12 text-center border border-gray-100">
-          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-            <FaCalendarAlt className="text-4xl text-gray-400" />
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              No {filter !== "all" ? filter : ""} bookings found
+            </h3>
+            <p className="text-gray-500">
+              {filter === "all"
+                ? "You don't have any bookings yet"
+                : `No ${filter} bookings at the moment`}
+            </p>
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">
-            No {filter !== "all" ? filter : ""} bookings found
-          </h3>
-          <p className="text-gray-500 mb-6">
-            {filter === "all"
-              ? "You don't have any bookings yet"
-              : `No ${filter} bookings at the moment`}
-          </p>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
