@@ -1,7 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 const TrainerNavbar: React.FC = () => {
+  const { user, logout } = useAuth();
+
   return (
     <header className="w-full bg-white border-b shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -19,7 +22,22 @@ const TrainerNavbar: React.FC = () => {
             <button className="p-2 rounded-full hover:bg-gray-100">
               🔔
             </button>
-            <div className="w-8 h-8 rounded-full bg-gray-200" />
+            
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                  <span className="text-sm">👤</span>
+                </div>
+                <span className="text-sm font-medium hidden sm:block">{user?.username}</span>
+              </div>
+              
+              <button
+                onClick={logout}
+                className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+              >
+                Logout
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -19,7 +19,18 @@ class AvailabilityListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         trainer_id = self.request.query_params.get('trainer_id')
         if trainer_id:
-            return Availability.objects.filter(trainer_id=trainer_id)
+            # Try to find by trainer profile ID first
+            try:
+                return Availability.objects.filter(trainer_id=trainer_id)
+            except:
+                pass
+            
+            # If not found, try to find by user ID
+            try:
+                trainer_profile = TrainerProfile.objects.get(user_id=trainer_id)
+                return Availability.objects.filter(trainer=trainer_profile)
+            except TrainerProfile.DoesNotExist:
+                return Availability.objects.none()
         
         # If user is a trainer, show only their availability
         if self.request.user.role == "trainer":
@@ -128,7 +139,15 @@ class BookingListView(generics.ListAPIView):
         if trainer_id:
             # When checking a specific trainer, show all their bookings
             # This is needed for the availability calendar
-            queryset = queryset.filter(trainer_id=trainer_id)
+            # Try to find by trainer profile ID first, then by user ID
+            try:
+                queryset = queryset.filter(trainer_id=trainer_id)
+            except:
+                try:
+                    trainer_profile = TrainerProfile.objects.get(user_id=trainer_id)
+                    queryset = queryset.filter(trainer=trainer_profile)
+                except TrainerProfile.DoesNotExist:
+                    queryset = queryset.none()
         else:
             # Filter by role (for user's own bookings)
             if user.role == "trainer":

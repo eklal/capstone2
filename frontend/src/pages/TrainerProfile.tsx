@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { getTrainerProfile } from "@/api/trainers";
 import { getTrainerAvailability } from "@/api/availability";
 import type { TrainerProfile as TrainerProfileType } from "@/api/trainers";
@@ -7,20 +7,27 @@ import type { AvailabilitySlot } from "@/api/availability";
 
 const TrainerProfile: React.FC = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const [profile, setProfile] = useState<TrainerProfileType | null>(null);
   const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Get trainer ID from current user or route params
-  const trainerId = 1; // TODO: Get from auth context or route
-
   useEffect(() => {
     loadProfileData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadProfileData = async () => {
     try {
       setLoading(true);
+      
+      if (!id) {
+        alert("Trainer ID not found in URL");
+        navigate("/");
+        return;
+      }
+      
+      const trainerId = parseInt(id);
       const [profileData, availabilityData] = await Promise.all([
         getTrainerProfile(trainerId),
         getTrainerAvailability(trainerId),
@@ -29,20 +36,20 @@ const TrainerProfile: React.FC = () => {
       setAvailability(availabilityData);
     } catch (error) {
       console.error("Error loading profile:", error);
+      
+      // If profile not found, show error message
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number } };
+        if (axiosError.response?.status === 404) {
+          alert("Trainer profile not found. Please complete your profile setup.");
+          navigate(`/trainer-profile/${id}/edit`);
+          return;
+        }
+      }
+      alert("Failed to load profile. Please try again.");
     } finally {
       setLoading(false);
     }
-  };
-
-  const getAvailabilityForDay = (day: string) => {
-    const slots = availability.filter(
-      (slot) => slot.day_of_week.toLowerCase() === day.toLowerCase()
-    );
-    if (slots.length === 0) return "Unavailable";
-    
-    return slots
-      .map((slot) => `${slot.start_time.slice(0, 5)} - ${slot.end_time.slice(0, 5)}`)
-      .join(", ");
   };
 
   const formatTime = (timeString: string) => {
@@ -78,7 +85,7 @@ const TrainerProfile: React.FC = () => {
           <div className="flex justify-between items-start mb-6">
             <h1 className="text-2xl font-bold">Profile</h1>
             <button
-              onClick={() => navigate("/profile/edit")}
+              onClick={() => navigate(`/trainer-profile/${id}/edit`)}
               className="bg-black text-white px-4 py-2 rounded-md text-sm flex items-center gap-2"
             >
               <span>✏️</span> Edit Profile
@@ -188,14 +195,18 @@ const TrainerProfile: React.FC = () => {
                     Specializations
                   </label>
                   <div className="flex flex-wrap gap-2">
-                    {profile.specialisations?.map((spec) => (
-                      <span
-                        key={spec.id}
-                        className="px-3 py-1 bg-gray-100 rounded-full text-sm"
-                      >
-                        {spec.name}
-                      </span>
-                    ))}
+                    {profile.specialisations && profile.specialisations.length > 0 ? (
+                      profile.specialisations.map((spec) => (
+                        <span
+                          key={spec.id}
+                          className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
+                        >
+                          {spec.name}
+                        </span>
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-500 italic">No specializations added yet</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -259,24 +270,28 @@ const TrainerProfile: React.FC = () => {
               <div className="border rounded-lg p-6">
                 <h3 className="text-lg font-semibold mb-4">Certifications</h3>
                 <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center">
-                      🎓
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">NASM-CPT</p>
-                      <p className="text-sm text-gray-500">Expires: Dec 2025</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center">
-                      🎓
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">Nutrition Coach</p>
-                      <p className="text-sm text-gray-500">Expires: Mar 2026</p>
-                    </div>
-                  </div>
+                  {profile.certifications && profile.certifications.length > 0 ? (
+                    profile.certifications.map((cert) => (
+                      <div key={cert.id} className="flex items-start gap-3">
+                        <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center">
+                          🎓
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium">{cert.file.split('/').pop()?.replace(/\.[^/.]+$/, '')}</p>
+                          <a 
+                            href={cert.file} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-600 hover:underline"
+                          >
+                            View Certificate
+                          </a>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-500 italic">No certifications uploaded yet</p>
+                  )}
                 </div>
               </div>
 

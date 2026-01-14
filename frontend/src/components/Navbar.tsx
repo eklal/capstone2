@@ -12,10 +12,10 @@ const Navbar = () => {
 
     // Get dashboard route based on user role
     const getDashboardRoute = () => {
-        if (user?.role === "trainer") {
-            return "/trainer-dashboard";
+        if (user?.role === "trainer" && user?.id) {
+            return `/trainer-dashboard/${user.id}`;
         } else if (user?.role === "client") {
-            return "/client-dashboard"; // or "/" for home
+            return "/client-dashboard";
         }
         return "/";
     };

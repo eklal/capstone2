@@ -7,6 +7,7 @@ export interface Specialisation {
 
 export interface TrainerProfile {
   id: number;
+  user_id: number;
   user_name: string;
   email: string;
   phone: string;
@@ -133,6 +134,58 @@ export const updateTrainerProfile = async (
   data: TrainerProfileUpdate
 ): Promise<TrainerProfile> => {
   const response = await api.patch(`/api/trainers/${id}/update/`, data);
+  return response.data;
+};
+
+// Update trainer profile with file uploads
+export const updateTrainerProfileWithFiles = async (
+  id: number,
+  data: TrainerProfileUpdate,
+  profilePic?: File | null,
+  certificates?: File[]
+): Promise<TrainerProfile> => {
+  const formData = new FormData();
+  
+  // Add profile data
+  if (data.phone) formData.append('phone', data.phone);
+  if (data.city) formData.append('city', data.city);
+  if (data.state) formData.append('state', data.state);
+  if (data.years_of_experience) formData.append('years_of_experience', data.years_of_experience.toString());
+  if (data.hourly_rate) formData.append('hourly_rate', data.hourly_rate.toString());
+  if (data.professional_title) formData.append('professional_title', data.professional_title);
+  if (data.bio) formData.append('bio', data.bio);
+  
+  // Add specialisations
+  if (data.specialisations && data.specialisations.length > 0) {
+    data.specialisations.forEach(specId => {
+      formData.append('specialisations', specId.toString());
+    });
+  }
+  
+  // Add videos
+  if (data.videos && data.videos.length > 0) {
+    data.videos.forEach(video => {
+      formData.append('videos', video);
+    });
+  }
+  
+  // Add profile picture
+  if (profilePic) {
+    formData.append('profile_pic_file', profilePic);
+  }
+  
+  // Add certificates
+  if (certificates && certificates.length > 0) {
+    certificates.forEach(cert => {
+      formData.append('certificate_files', cert);
+    });
+  }
+  
+  const response = await api.patch(`/api/trainers/${id}/update/`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response.data;
 };
 

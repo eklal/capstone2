@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { getTrainerProfile, updateTrainerProfile } from "@/api/trainers";
+import { useNavigate, useParams } from "react-router-dom";
+import { getTrainerProfile, updateTrainerProfileWithFiles, getSpecialisations } from "@/api/trainers";
 import { getTrainerAvailability, bulkUpdateAvailability } from "@/api/availability";
-import type { TrainerProfileUpdate } from "@/api/trainers";
+import type { TrainerProfileUpdate, TrainerProfile } from "@/api/trainers";
 import type { AvailabilitySlot } from "@/api/availability";
 
 interface TimeSlot {
@@ -34,14 +34,15 @@ const DAY_LABELS: Record<string, string> = {
 
 const EditProfile: React.FC = () => {
   const navigate = useNavigate();
-  const trainerId = 1; // TODO: Get from auth context
+  const { id } = useParams<{ id: string }>();
+  const [trainerId, setTrainerId] = useState<number | null>(null);
+  const [profileData, setProfileData] = useState<TrainerProfile | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   // Form state
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
@@ -52,14 +53,15 @@ const EditProfile: React.FC = () => {
   const [bio, setBio] = useState("");
   
   // Specializations state
-  const [selectedSpecs, setSelectedSpecs] = useState<string[]>([]);
+  const [selectedSpecs, setSelectedSpecs] = useState<number[]>([]);
+  const [availableSpecs, setAvailableSpecs] = useState<Array<{id: number; name: string}>>([]);
   
-  // Certifications state
-  const [certifications, setCertifications] = useState<Array<{
-    name: string;
-    issuer: string;
-    date: string;
-  }>>([]);
+  // File upload state
+  const [profilePicFile, setProfilePicFile] = useState<File | null>(null);
+  const [profilePicPreview, setProfilePicPreview] = useState<string>("");
+  const [certificateFiles, setCertificateFiles] = useState<File[]>([]);
+  
+  // Certifications state (for display/existing)
 
   // Availability state
   const [availability, setAvailability] = useState<TimeSlot[]>(
@@ -73,33 +75,56 @@ const EditProfile: React.FC = () => {
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const [profileData, availabilityData] = await Promise.all([
-        getTrainerProfile(trainerId),
-        getTrainerAvailability(trainerId),
-      ]);
+      
+      if (!id) {
+        alert("Trainer ID not found in URL");
+        navigate("/");
+        return;
+      }
+      
+      const trainerIdNum = parseInt(id);
+      console.log("🔄 Loading trainer profile for ID:", trainerIdNum);
+      
+      // Get trainer's profile using their ID from URL
+      const data = await getTrainerProfile(trainerIdNum);
+      console.log("✅ Profile loaded:", data);
+      
+      setTrainerId(data.id);
+      setProfileData(data);
+      
+      // Fetch available specializations from API
+      const specsData = await getSpecialisations();
+      setAvailableSpecs(specsData);
+      
+      // Get availability
+      const availabilityData = await getTrainerAvailability(data.id);
 
       // Set profile data
-      const nameParts = profileData.user_name.split(" ");
-      setFirstName(nameParts[0] || "");
-      setLastName(nameParts.slice(1).join(" ") || "");
-      setEmail(profileData.email);
-      setPhone(profileData.phone);
-      setCity(profileData.city || "");
-      setState(profileData.state || "");
-      setExperience(profileData.years_of_experience.toString());
-      setHourlyRate(profileData.hourly_rate.toString());
-      setProfessionalTitle(profileData.professional_title || "");
-      setBio(profileData.bio || "");
+      setUsername(data.user_name || "");
+      setEmail(data.email);
+      setPhone(data.phone || "");
+      setCity(data.city || "");
+      setState(data.state || "");
+      setExperience(data.years_of_experience?.toString() || "0");
+      setHourlyRate(data.hourly_rate?.toString() || "");
+      setProfessionalTitle(data.professional_title || "");
+      setBio(data.bio || "");
 
-      // Set specializations
+      // Set specializations (use IDs)
       setSelectedSpecs(
-        profileData.specialisations?.map((s) => s.name) || []
+        data.specialisations?.map((s) => s.id) || []
       );
+
+      // Set profile picture preview if exists
+      if (data.profile_pic?.file) {
+        setProfilePicPreview(data.profile_pic.file);
+      }
 
       // Set availability from API
       if (availabilityData.length > 0) {
@@ -131,11 +156,11 @@ const EditProfile: React.FC = () => {
     }
   };
 
-  const handleSpecToggle = (spec: string) => {
+  const handleSpecToggle = (specId: number) => {
     setSelectedSpecs((prev) =>
-      prev.includes(spec)
-        ? prev.filter((s) => s !== spec)
-        : [...prev, spec]
+      prev.includes(specId)
+        ? prev.filter((id) => id !== specId)
+        : [...prev, specId]
     );
   };
 
@@ -159,22 +184,39 @@ const EditProfile: React.FC = () => {
     );
   };
 
-  const addCertification = () => {
-    setCertifications([
-      ...certifications,
-      { name: "", issuer: "", date: "" },
-    ]);
+
+  const handleProfilePicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setProfilePicFile(file);
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePicPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  const removeCertification = (index: number) => {
-    setCertifications(certifications.filter((_, i) => i !== index));
+  const handleCertificateFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setCertificateFiles(prev => [...prev, ...files]);
+  };
+
+  const removeCertificateFile = (index: number) => {
+    setCertificateFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSave = async () => {
+    if (!trainerId) {
+      alert("Trainer ID not found");
+      return;
+    }
+
     try {
       setSaving(true);
 
-      // Update profile
+      // Update profile with files
       const profileUpdate: TrainerProfileUpdate = {
         phone,
         city,
@@ -183,15 +225,21 @@ const EditProfile: React.FC = () => {
         hourly_rate: parseFloat(hourlyRate),
         professional_title: professionalTitle,
         bio,
+        specialisations: selectedSpecs, // ✅ Add specializations (already numbers)
       };
 
-      await updateTrainerProfile(trainerId, profileUpdate);
+      await updateTrainerProfileWithFiles(
+        trainerId,
+        profileUpdate,
+        profilePicFile,
+        certificateFiles
+      );
 
       // Update availability
       const availabilitySlots: AvailabilitySlot[] = availability
         .filter((slot) => slot.enabled)
         .map((slot) => ({
-          day_of_week: slot.day as any,
+          day_of_week: slot.day as AvailabilitySlot["day_of_week"],
           start_time: slot.start_time,
           end_time: slot.end_time,
           is_available: true,
@@ -200,7 +248,7 @@ const EditProfile: React.FC = () => {
       await bulkUpdateAvailability(availabilitySlots);
 
       alert("Profile updated successfully!");
-      navigate("/profile");
+      navigate(`/trainer-profile/${id}`);
     } catch (error) {
       console.error("Error saving profile:", error);
       alert("Failed to save profile");
@@ -227,7 +275,7 @@ const EditProfile: React.FC = () => {
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => navigate("/profile")}
+                onClick={() => navigate(`/trainer-profile/${id}`)}
                 className="px-4 py-2 border rounded-md"
               >
                 Cancel
@@ -252,16 +300,43 @@ const EditProfile: React.FC = () => {
                 Profile Photo
               </label>
               <div className="flex items-center gap-4">
-                <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center text-3xl">
-                  👤
+                <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center text-3xl overflow-hidden">
+                  {profilePicPreview ? (
+                    <img
+                      src={profilePicPreview}
+                      alt="Profile preview"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span>👤</span>
+                  )}
                 </div>
                 <div>
-                  <button className="px-4 py-2 border rounded-md text-sm mr-2">
+                  <input
+                    type="file"
+                    id="profile-pic-upload"
+                    accept="image/*"
+                    onChange={handleProfilePicChange}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="profile-pic-upload"
+                    className="px-4 py-2 border rounded-md text-sm mr-2 cursor-pointer inline-block hover:bg-gray-50"
+                  >
                     📤 Upload New Photo
-                  </button>
-                  <button className="px-4 py-2 text-sm text-gray-600">
-                    Remove Photo
-                  </button>
+                  </label>
+                  {profilePicPreview && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfilePicFile(null);
+                        setProfilePicPreview("");
+                      }}
+                      className="px-4 py-2 text-sm text-gray-600 hover:text-red-600"
+                    >
+                      Remove Photo
+                    </button>
+                  )}
                   <p className="text-xs text-gray-500 mt-2">
                     JPG, PNG or GIF. Max size 5MB.
                   </p>
@@ -269,32 +344,21 @@ const EditProfile: React.FC = () => {
               </div>
             </div>
 
-            {/* Name Fields */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  First Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md"
-                  placeholder="Enter your first name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Last Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md"
-                  placeholder="Enter your last name"
-                />
-              </div>
+            {/* Username */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Username <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-3 py-2 border rounded-md"
+                placeholder="Enter your username"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Your display name visible to clients
+              </p>
             </div>
 
             {/* Email and Phone */}
@@ -340,18 +404,22 @@ const EditProfile: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  State
+                  State/Territory
                 </label>
                 <select
                   value={state}
                   onChange={(e) => setState(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md"
+                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Select state</option>
-                  <option value="New York">New York</option>
-                  <option value="California">California</option>
-                  <option value="Texas">Texas</option>
-                  {/* Add more states */}
+                  <option value="">Select state/territory</option>
+                  <option value="NSW">New South Wales (NSW)</option>
+                  <option value="VIC">Victoria (VIC)</option>
+                  <option value="QLD">Queensland (QLD)</option>
+                  <option value="SA">South Australia (SA)</option>
+                  <option value="WA">Western Australia (WA)</option>
+                  <option value="TAS">Tasmania (TAS)</option>
+                  <option value="NT">Northern Territory (NT)</option>
+                  <option value="ACT">Australian Capital Territory (ACT)</option>
                 </select>
               </div>
             </div>
@@ -421,90 +489,103 @@ const EditProfile: React.FC = () => {
                 Specializations
               </label>
               <div className="grid grid-cols-3 gap-3">
-                {[
-                  "Strength Training",
-                  "Cardio Training",
-                  "Rehabilitation",
-                  "Weight Loss",
-                  "Functional Movement",
-                  "Group Fitness",
-                  "Nutrition Coaching",
-                  "Sports Performance",
-                  "Yoga",
-                ].map((spec) => (
-                  <label key={spec} className="flex items-center gap-2">
+                {availableSpecs.map((spec) => (
+                  <label key={spec.id} className="flex items-center gap-2">
                     <input
                       type="checkbox"
-                      checked={selectedSpecs.includes(spec)}
-                      onChange={() => handleSpecToggle(spec)}
+                      checked={selectedSpecs.includes(spec.id)}
+                      onChange={() => handleSpecToggle(spec.id)}
                       className="rounded"
                     />
-                    <span className="text-sm">{spec}</span>
+                    <span className="text-sm">{spec.name}</span>
                   </label>
                 ))}
               </div>
+              {availableSpecs.length === 0 && (
+                <p className="text-sm text-gray-500 italic">Loading specializations...</p>
+              )}
             </div>
+          </div>
+
+          {/* Certificate Files Upload */}
+          <div className="border rounded-lg p-6 mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Upload Certification Files</h2>
+            </div>
+            <div className="mb-4">
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                multiple
+                onChange={handleCertificateFilesChange}
+                className="block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-md file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-green-50 file:text-green-700
+                  hover:file:bg-green-100"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Upload certification documents (PDF, JPG, PNG - multiple files allowed)
+              </p>
+            </div>
+            {certificateFiles.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-700 mb-2">
+                  Selected Files ({certificateFiles.length}):
+                </p>
+                {certificateFiles.map((file, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between bg-gray-50 p-2 rounded"
+                  >
+                    <span className="text-sm text-gray-700">
+                      📄 {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeCertificateFile(index)}
+                      className="text-red-500 hover:text-red-700 text-sm"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Existing Certifications from Backend */}
+            {profileData?.certifications && profileData.certifications.length > 0 && (
+              <div className="mt-4 pt-4 border-t">
+                <p className="text-sm font-medium text-gray-700 mb-2">
+                  Existing Certifications ({profileData.certifications.length}):
+                </p>
+                <div className="space-y-2">
+                  {profileData.certifications.map((cert, index) => (
+                    <div
+                      key={cert.id || index}
+                      className="flex items-center justify-between bg-blue-50 p-2 rounded"
+                    >
+                      <a
+                        href={cert.file}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-700 hover:underline flex items-center gap-2"
+                      >
+                        📄 {cert.file.split('/').pop()}
+                        <span className="text-xs text-gray-500">
+                          (Uploaded: {new Date(cert.uploaded_at).toLocaleDateString()})
+                        </span>
+                      </a>
+                      <span className="text-xs text-green-600">✓ Uploaded</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Certifications */}
-          <div className="border rounded-lg p-6 mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Certifications</h2>
-              <button
-                onClick={addCertification}
-                className="text-sm text-blue-600"
-              >
-                + Add Certification
-              </button>
-            </div>
-
-            {certifications.map((cert, index) => (
-              <div key={index} className="flex gap-3 mb-3">
-                <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center">
-                  🎓
-                </div>
-                <input
-                  type="text"
-                  placeholder="Certification Name"
-                  value={cert.name}
-                  onChange={(e) => {
-                    const newCerts = [...certifications];
-                    newCerts[index].name = e.target.value;
-                    setCertifications(newCerts);
-                  }}
-                  className="flex-1 px-3 py-2 border rounded-md"
-                />
-                <input
-                  type="text"
-                  placeholder="Issuing Organization"
-                  value={cert.issuer}
-                  onChange={(e) => {
-                    const newCerts = [...certifications];
-                    newCerts[index].issuer = e.target.value;
-                    setCertifications(newCerts);
-                  }}
-                  className="flex-1 px-3 py-2 border rounded-md"
-                />
-                <input
-                  type="date"
-                  value={cert.date}
-                  onChange={(e) => {
-                    const newCerts = [...certifications];
-                    newCerts[index].date = e.target.value;
-                    setCertifications(newCerts);
-                  }}
-                  className="px-3 py-2 border rounded-md"
-                />
-                <button
-                  onClick={() => removeCertification(index)}
-                  className="text-red-500"
-                >
-                  🗑️
-                </button>
-              </div>
-            ))}
-          </div>
-
           {/* Availability Schedule */}
           <div className="border rounded-lg p-6 mb-6">
             <h2 className="text-lg font-semibold mb-4">Availability Schedule</h2>
@@ -555,7 +636,7 @@ const EditProfile: React.FC = () => {
           {/* Footer Buttons */}
           <div className="flex justify-end gap-2">
             <button
-              onClick={() => navigate("/profile")}
+              onClick={() => navigate(`/trainer-profile/${id}`)}
               className="px-4 py-2 border rounded-md"
             >
               Cancel

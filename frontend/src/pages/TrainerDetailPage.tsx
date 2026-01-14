@@ -28,6 +28,7 @@ const TrainerDetailPage: React.FC = () => {
     if (trainerId) {
       loadTrainerData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trainerId]);
 
   const loadTrainerData = async () => {
@@ -198,34 +199,31 @@ const TrainerDetailPage: React.FC = () => {
                 {trainer.bio || "No bio provided"}
               </p>
             </div>
-
             {/* Certifications */}
             {trainer.certifications && trainer.certifications.length > 0 && (
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-xl font-bold mb-4">Certifications</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="border rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="text-2xl">🎓</div>
-                      <div>
-                        <p className="font-semibold">NASM-CPT</p>
-                        <p className="text-sm text-gray-500">
-                          National Academy of Sports Medicine
-                        </p>
+                  {trainer.certifications.map((cert, index) => (
+                    <div key={cert.id || index} className="border rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="text-2xl">🎓</div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-sm break-all">
+                            {cert.file.split("/").pop()}
+                          </p>
+                          <a
+                            href={cert.file}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 hover:underline mt-1 inline-block"
+                          >
+                            View Certificate
+                          </a>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="border rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="text-2xl">🎓</div>
-                      <div>
-                        <p className="font-semibold">ACSM Certified</p>
-                        <p className="text-sm text-gray-500">
-                          American College of Sports Medicine
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             )}
