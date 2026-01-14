@@ -18,7 +18,7 @@ export default function FiltersPanel({
 }: {
   value: FiltersState;
   onChange: (v: FiltersState) => void;
-  onApply: () => void;
+  onApply: (filters: FiltersState) => void;
   onClose?: ()=>void;
   hideClose?: boolean;
 }) {
@@ -107,16 +107,27 @@ export default function FiltersPanel({
       </div>
 
       <div className="mt-6 flex gap-3">
-        <button className="bg-[var(--primary)] text-white px-4 py-2 rounded" onClick={()=>{
-          onChange(state);
-          onApply();
-        }}>Apply Filters</button>
+        <button 
+          className="bg-[var(--primary)] text-white px-4 py-2 rounded hover:opacity-90 transition-opacity" 
+          onClick={() => {
+            onChange(state);
+            onApply(state); // Pass the current state directly
+          }}
+        >
+          Apply Filters
+        </button>
 
-        <button className="px-4 py-2 border rounded" onClick={()=>{
-          const cleared = { location: "", specialties: [], priceRange: undefined, experience: undefined };
-          setState(cleared);
-          onChange(cleared);
-        }}>Clear</button>
+        <button 
+          className="px-4 py-2 border rounded hover:bg-gray-50 transition-colors" 
+          onClick={() => {
+            const cleared = { location: "", specialties: [], priceRange: undefined, experience: undefined };
+            setState(cleared);
+            onChange(cleared);
+            onApply(cleared); // Pass cleared state directly
+          }}
+        >
+          Clear
+        </button>
       </div>
     </div>
   );

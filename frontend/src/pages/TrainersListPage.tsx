@@ -198,11 +198,11 @@ export default function TrainersListPage() {
                         <select
                             value={sortBy}
                             onChange={(e) => handleSortChange(e.target.value)}
-                            className="border px-3 py-2 rounded"
+                            className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-red-500"
                         >
                             <option value="relevance">Sort by: Relevance</option>
-                            <option value="price_desc">Price (low to high)</option>
-                            <option value="price_asc">Price (high to low)</option>
+                            <option value="price_asc">Price (low to high)</option>
+                            <option value="price_desc">Price (high to low)</option>
                             <option value="rating">Rating</option>
                         </select>
 
@@ -221,14 +221,11 @@ export default function TrainersListPage() {
                     <div className="hidden md:block">
                         <FiltersPanel
                             value={filters}
-                            onChange={(v) => {
-                                setFilters(v);
-                                // If clearing filters, apply immediately
-                                if (!v.location && v.specialties.length === 0 && !v.priceRange && !v.experience) {
-                                    applyFilters(v);
-                                }
+                            onChange={(v) => setFilters(v)}
+                            onApply={(newFilters) => {
+                                setFilters(newFilters);
+                                load(1, newFilters, sortBy);
                             }}
-                            onApply={() => applyFilters(filters)}
                             hideClose
                         />
                     </div>
@@ -279,7 +276,11 @@ export default function TrainersListPage() {
                             <FiltersPanel
                                 value={filters}
                                 onChange={(v) => setFilters(v)}
-                                onApply={() => applyFilters(filters)}
+                                onApply={(newFilters) => {
+                                    setFilters(newFilters);
+                                    load(1, newFilters, sortBy);
+                                    setShowMobileFilters(false);
+                                }}
                                 onClose={() => setShowMobileFilters(false)}
                             />
                         </div>
