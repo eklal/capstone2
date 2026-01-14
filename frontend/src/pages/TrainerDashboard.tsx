@@ -1,25 +1,38 @@
 // src/pages/TrainerDashboard.tsx
 import React, { useEffect, useState } from "react";
-import { getTrainerProfile,  ProfileData } from "../api/trainers";
-import { Booking,updateBookingStatus,getBookings } from "../api/booking";
+import { useNavigate, useParams } from "react-router-dom";
+import { getTrainerProfile } from "../api/trainers";
+import type { TrainerProfile } from "../api/trainers";
+import { getBookings } from "../api/bookings";
+import type { Booking } from "../api/bookings";
 
 import SmallStatCard from "../components/trainerDashboard/SmallStatCard";
 import RevenueChart from "../components/trainerDashboard/RevenueChart";
-import BookingsTable from "../components/trainerDashboard/BookingsTable";
 import Card from "../components/ui/Card";
 import { ShimmerCard } from "../components/ui/Shimmer";
 
 export default function TrainerDashboard() {
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [profile, setProfile] = useState<TrainerProfile | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const trainerId = 101; // sample
 
   // Method to fetch data before rendering (shows shimmer while loading)
   const fetchBeforeRender = async () => {
     setLoading(true);
     try {
-      const [p, b] = await Promise.all([getTrainerProfile(trainerId), getBookings(trainerId)]);
+      if (!id) {
+        alert("Trainer ID not found in URL");
+        navigate("/");
+        return;
+      }
+      
+      const trainerId = parseInt(id);
+      const [p, b] = await Promise.all([
+        getTrainerProfile(trainerId), 
+        getBookings() // Get bookings for logged-in trainer (filtered by backend)
+      ]);
       setProfile(p);
       setBookings(b);
     } catch (err) {
@@ -31,18 +44,9 @@ export default function TrainerDashboard() {
 
   useEffect(() => {
     fetchBeforeRender();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleUpdateBooking = async (bookingId: string, status: Booking["status"]) => {
-    // show optimistic change locally (optional)
-    setBookings((prev) => prev.map(b => b.id === bookingId ? { ...b, status } : b));
-    // call API
-    const res = await updateBookingStatus(bookingId, status);
-    if (!res.ok) {
-      // rollback if needed (not implemented here)
-      console.error("Failed to update booking");
-    }
-  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -50,10 +54,26 @@ export default function TrainerDashboard() {
 
       {/* Stats row */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <SmallStatCard title="Total Revenue" value={profile ? `$${profile.totalRevenue.toLocaleString()}` : ""} loading={loading} />
-        <SmallStatCard title="Active Bookings" value={profile ? profile.activeBookings : ""} loading={loading} />
-        <SmallStatCard title="Pending Requests" value={profile ? profile.pendingRequests : ""} loading={loading} />
-        <SmallStatCard title="Completed Sessions" value={profile ? profile.completedSessions : ""} loading={loading} />
+        <SmallStatCard 
+          title="Total Revenue" 
+          value={profile ? `$${(Number(profile.hourly_rate || 0) * bookings.length).toLocaleString()}` : ""} 
+          loading={loading} 
+        />
+        <SmallStatCard 
+          title="Active Bookings" 
+          value={bookings.filter(b => b.status === "confirmed").length} 
+          loading={loading} 
+        />
+        <SmallStatCard 
+          title="Pending Requests" 
+          value={bookings.filter(b => b.status === "pending").length} 
+          loading={loading} 
+        />
+        <SmallStatCard 
+          title="Total Sessions" 
+          value={bookings.length} 
+          loading={loading} 
+        />
       </div>
 
       {/* Chart + quick actions area */}
@@ -68,7 +88,7 @@ export default function TrainerDashboard() {
               </select>
             </div>
 
-            <RevenueChart data={profile?.revenueSeries} loading={loading} />
+            <RevenueChart data={undefined} loading={loading} />
           </Card>
         </div>
 
@@ -94,7 +114,24 @@ export default function TrainerDashboard() {
 
           <div>
             {loading ? <div className="space-y-3"><ShimmerCard /><ShimmerCard /></div> : (
-              <BookingsTable bookings={bookings} loading={false} onAction={handleUpdateBooking} />
+              <div>
+                {bookings.length > 0 ? (
+                  <div className="space-y-3">
+                    {bookings.map((booking) => (
+                      <div key={booking.id} className="border rounded p-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium">Booking #{booking.id}</p>
+                            <p className="text-sm text-gray-600">Status: {booking.status}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center py-4">No bookings yet</p>
+                )}
+              </div>
             )}
           </div>
         </Card>

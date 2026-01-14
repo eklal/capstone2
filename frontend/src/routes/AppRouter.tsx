@@ -5,7 +5,6 @@ import { Dashboard } from "@/pages/Dashboard";
 import Sample from "@/pages/Sample";
 import RegisterTrainer from "@/pages/RegisterTrainer";
 import TrainersListPage from "@/pages/TrainersListPage";
-import TrainerProfilePage from "@/pages/TrainerProfilePage";
 import TrainerDashboard from "@/pages/TrainerDashboard";
 import ClientDashboard from "@/pages/ClientDashboard";
 import MyGigs from "@/pages/MyGigs";
@@ -67,10 +66,9 @@ const AppRouter: React.FC = () => {
             </ProtectedRoute>
           }
         >
-          <Route path="/trainer-dashboard" element={<TrainerDashboard />} />
-          <Route path="/trainer-profile" element={<TrainerProfilePage />} />
-          <Route path="/profile" element={<TrainerProfile />} />
-          <Route path="/profile/edit" element={<EditProfile />} />
+          <Route path="/trainer-dashboard/:id" element={<TrainerDashboard />} />
+          <Route path="/trainer-profile/:id" element={<TrainerProfile />} />
+          <Route path="/trainer-profile/:id/edit" element={<EditProfile />} />
           <Route path="/trainer/gigs" element={<MyGigs />} />
           <Route path="/trainer/gigs/new" element={<CreateEditGig />} />
           <Route path="/trainer/gigs/:gigId/edit" element={<CreateEditGig />} />
