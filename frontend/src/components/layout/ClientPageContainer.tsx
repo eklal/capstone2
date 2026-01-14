@@ -1,54 +1,54 @@
 import React from "react";
-import { Outlet, Link, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import {
   FiHome,
-  FiUser,
   FiCalendar,
-  FiDollarSign,
+  FiHeart,
+  FiCreditCard,
+  FiUser,
   FiSettings,
-  FiBriefcase,
 } from "react-icons/fi";
 
-const TrainerPageContainer: React.FC = () => {
+interface ClientPageContainerProps {
+  children: React.ReactNode;
+}
+
+const ClientPageContainer: React.FC<ClientPageContainerProps> = ({ children }) => {
   const location = useLocation();
   const { user } = useAuth();
-  const { id } = useParams<{ id: string }>();
-  
-  // Use URL param if available, otherwise fallback to user ID
-  const trainerId = id || user?.id;
 
   const navigationItems = [
     {
       name: "Dashboard",
-      path: `/trainer-dashboard/${trainerId}`,
+      path: "/client-dashboard",
       icon: <FiHome className="text-xl" />,
     },
     {
-      name: "Profile",
-      path: `/trainer-profile/${trainerId}`,
-      icon: <FiUser className="text-xl" />,
-    },
-    {
-      name: "Bookings",
-      path: "/trainer-bookings",
+      name: "My Bookings",
+      path: "/my-bookings",
       icon: <FiCalendar className="text-xl" />,
     },
     {
-      name: "Gigs",
-      path: "/trainer/gigs",
-      icon: <FiBriefcase className="text-xl" />,
+      name: "Favorites",
+      path: "/favorites",
+      icon: <FiHeart className="text-xl" />,
     },
     {
-      name: "Income",
-      path: "/trainer-income",
-      icon: <FiDollarSign className="text-xl" />,
+      name: "Payment Methods",
+      path: "/payment-methods",
+      icon: <FiCreditCard className="text-xl" />,
+    },
+    {
+      name: "Profile",
+      path: "/profile",
+      icon: <FiUser className="text-xl" />,
     },
     {
       name: "Settings",
-      path: "/trainer-settings",
+      path: "/settings",
       icon: <FiSettings className="text-xl" />,
     },
   ];
@@ -64,8 +64,8 @@ const TrainerPageContainer: React.FC = () => {
             {/* User Info */}
             <div className="mb-8 pb-6 border-b border-gray-200">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center text-white font-bold text-lg">
-                  {user?.username?.[0]?.toUpperCase() || "T"}
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                  {user?.username?.[0]?.toUpperCase() || "U"}
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900">{user?.username}</h3>
@@ -77,8 +77,7 @@ const TrainerPageContainer: React.FC = () => {
             {/* Navigation */}
             <nav className="space-y-2">
               {navigationItems.map((item) => {
-                const isActive = location.pathname === item.path || 
-                  (item.path !== `/trainer-dashboard/${trainerId}` && location.pathname.startsWith(item.path));
+                const isActive = location.pathname === item.path;
                 return (
                   <Link
                     key={item.path}
@@ -105,7 +104,9 @@ const TrainerPageContainer: React.FC = () => {
 
         {/* Main Content */}
         <main className="flex-1 lg:ml-64">
-          <Outlet />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {children}
+          </div>
         </main>
       </div>
 
@@ -113,8 +114,7 @@ const TrainerPageContainer: React.FC = () => {
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-30">
         <div className="flex justify-around items-center h-16">
           {navigationItems.slice(0, 4).map((item) => {
-            const isActive = location.pathname === item.path ||
-              (item.path !== `/trainer-dashboard/${trainerId}` && location.pathname.startsWith(item.path));
+            const isActive = location.pathname === item.path;
             return (
               <Link
                 key={item.path}
@@ -137,4 +137,4 @@ const TrainerPageContainer: React.FC = () => {
   );
 };
 
-export default TrainerPageContainer;
+export default ClientPageContainer;

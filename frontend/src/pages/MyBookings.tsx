@@ -1,38 +1,34 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getBookings, updateBookingStatus, type Booking } from "@/api/bookings";
-import { useAuth } from "@/hooks/useAuth";
 import { format, parseISO } from "date-fns";
+import ClientPageContainer from "@/components/layout/ClientPageContainer";
 import {
   FaCalendarAlt,
   FaClock,
   FaUser,
-  FaDollarSign,
   FaInfoCircle,
+  FaDollarSign,
 } from "react-icons/fa";
-import { FiCheckCircle, FiXCircle, FiClock, FiCheck } from "react-icons/fi";
+import { FiCheckCircle, FiXCircle, FiClock } from "react-icons/fi";
 import toast, { Toaster } from "react-hot-toast";
 
-export default function TrainerBookings() {
-  const { user } = useAuth();
+const MyBookings: React.FC = () => {
+  const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "pending" | "confirmed" | "cancelled" | "completed">("all");
+  const [filterStatus, setFilterStatus] = useState<Booking["status"] | "all">("all");
 
   useEffect(() => {
     loadBookings();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [filterStatus]);
 
   const loadBookings = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const data = await getBookings({ trainer_id: user?.id });
-      const sorted = data.sort((a, b) => {
-        const dateA = new Date(`${a.date} ${a.start_time}`);
-        const dateB = new Date(`${b.date} ${b.start_time}`);
-        return dateB.getTime() - dateA.getTime();
-      });
-      setBookings(sorted);
+      const filters = filterStatus === "all" ? {} : { status: filterStatus };
+      const data = await getBookings(filters);
+      setBookings(data);
     } catch (error) {
       console.error("Error loading bookings:", error);
       toast.error("Failed to load bookings");
@@ -41,14 +37,16 @@ export default function TrainerBookings() {
     }
   };
 
-  const handleStatusChange = async (bookingId: number, newStatus: "confirmed" | "cancelled" | "completed") => {
+  const handleCancelBooking = async (id: number) => {
+    if (!confirm("Are you sure you want to cancel this booking?")) return;
+
     try {
-      await updateBookingStatus(bookingId, newStatus);
-      toast.success(`Booking ${newStatus} successfully!`);
+      await updateBookingStatus(id, "cancelled");
+      toast.success("Booking cancelled successfully");
       loadBookings();
     } catch (error) {
-      console.error("Error updating booking:", error);
-      toast.error("Failed to update booking status");
+      console.error("Error cancelling booking:", error);
+      toast.error("Failed to cancel booking");
     }
   };
 
@@ -76,21 +74,22 @@ export default function TrainerBookings() {
       case "cancelled":
         return <FiXCircle className="text-red-600" />;
       case "completed":
-        return <FiCheck className="text-blue-600" />;
+        return <FiCheckCircle className="text-blue-600" />;
     }
   };
 
-  const filteredBookings = filter === "all" ? bookings : bookings.filter((b) => b.status === filter);
+  const filteredBookings = bookings.filter((booking) =>
+    filterStatus === "all" ? true : booking.status === filterStatus
+  );
 
-  const stats = {
-    total: bookings.length,
-    pending: bookings.filter((b) => b.status === "pending").length,
-    confirmed: bookings.filter((b) => b.status === "confirmed").length,
-    completed: bookings.filter((b) => b.status === "completed").length,
-  };
+  // Stats
+  const totalBookings = bookings.length;
+  const pendingBookings = bookings.filter((b) => b.status === "pending").length;
+  const confirmedBookings = bookings.filter((b) => b.status === "confirmed").length;
+  const completedBookings = bookings.filter((b) => b.status === "completed").length;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <ClientPageContainer>
       <Toaster position="top-center" />
 
       {/* Header */}
@@ -103,47 +102,41 @@ export default function TrainerBookings() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-200 hover:shadow-xl transition-all">
+        <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-200">
           <p className="text-sm text-gray-600 font-medium mb-1">Total Bookings</p>
-          <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
+          <p className="text-3xl font-bold text-gray-900">{totalBookings}</p>
         </div>
-        <div className="bg-white rounded-2xl shadow-md p-6 border-l-4 border-yellow-400 hover:shadow-xl transition-all">
+        <div className="bg-white rounded-2xl shadow-md p-6 border border-yellow-200">
           <p className="text-sm text-yellow-700 font-medium mb-1">Pending</p>
-          <p className="text-3xl font-bold text-yellow-600">{stats.pending}</p>
+          <p className="text-3xl font-bold text-yellow-600">{pendingBookings}</p>
         </div>
-        <div className="bg-white rounded-2xl shadow-md p-6 border-l-4 border-green-400 hover:shadow-xl transition-all">
+        <div className="bg-white rounded-2xl shadow-md p-6 border border-green-200">
           <p className="text-sm text-green-700 font-medium mb-1">Confirmed</p>
-          <p className="text-3xl font-bold text-green-600">{stats.confirmed}</p>
+          <p className="text-3xl font-bold text-green-600">{confirmedBookings}</p>
         </div>
-        <div className="bg-white rounded-2xl shadow-md p-6 border-l-4 border-blue-400 hover:shadow-xl transition-all">
+        <div className="bg-white rounded-2xl shadow-md p-6 border border-blue-200">
           <p className="text-sm text-blue-700 font-medium mb-1">Completed</p>
-          <p className="text-3xl font-bold text-blue-600">{stats.completed}</p>
+          <p className="text-3xl font-bold text-blue-600">{completedBookings}</p>
         </div>
       </div>
 
       {/* Filter Tabs */}
       <div className="bg-white rounded-2xl shadow-md mb-8 overflow-hidden">
         <div className="flex overflow-x-auto">
-          {[
-            { key: "all", label: "All", count: bookings.length },
-            { key: "pending", label: "Pending", count: stats.pending },
-            { key: "confirmed", label: "Confirmed", count: stats.confirmed },
-            { key: "completed", label: "Completed", count: stats.completed },
-            { key: "cancelled", label: "Cancelled", count: bookings.filter(b => b.status === "cancelled").length },
-          ].map((tab) => (
+          {["all", "pending", "confirmed", "completed", "cancelled"].map((status) => (
             <button
-              key={tab.key}
-              onClick={() => setFilter(tab.key as typeof filter)}
+              key={status}
+              onClick={() => setFilterStatus(status as Booking["status"] | "all")}
               className={`
                 flex-1 min-w-[120px] px-6 py-4 text-sm font-semibold border-b-4 transition-all
                 ${
-                  filter === tab.key
+                  filterStatus === status
                     ? "border-[var(--primary)] text-[var(--primary)] bg-red-50"
                     : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                 }
               `}
             >
-              {tab.label} ({tab.count})
+              {status.charAt(0).toUpperCase() + status.slice(1)}
             </button>
           ))}
         </div>
@@ -176,7 +169,7 @@ export default function TrainerBookings() {
                       </div>
                       <div>
                         <h3 className="text-xl font-bold text-gray-900">
-                          {booking.client_name || `Client ${booking.client}`}
+                          {booking.trainer_name || `Trainer ${booking.trainer}`}
                         </h3>
                         <p className="text-sm text-gray-600">
                           Booking #{booking.id}
@@ -195,7 +188,7 @@ export default function TrainerBookings() {
                   </div>
 
                   {/* Booking Details Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm mb-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                     <div className="flex items-center gap-2 text-gray-700">
                       <FaCalendarAlt className="text-gray-500" />
                       <div>
@@ -234,9 +227,9 @@ export default function TrainerBookings() {
 
                   {/* Notes */}
                   {booking.notes && (
-                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
                       <p className="text-xs text-gray-500 font-semibold mb-1">
-                        Client Notes:
+                        Notes:
                       </p>
                       <p className="text-sm text-gray-700">{booking.notes}</p>
                     </div>
@@ -248,33 +241,48 @@ export default function TrainerBookings() {
                   {booking.status === "pending" && (
                     <>
                       <button
-                        onClick={() => handleStatusChange(booking.id!, "confirmed")}
-                        className="flex-1 lg:flex-none px-5 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold text-sm flex items-center justify-center gap-2 shadow-lg"
-                      >
-                        <FiCheckCircle /> Accept
-                      </button>
-                      <button
-                        onClick={() => handleStatusChange(booking.id!, "cancelled")}
+                        onClick={() => handleCancelBooking(booking.id!)}
                         className="flex-1 lg:flex-none px-5 py-3 border-2 border-red-500 text-red-500 rounded-xl hover:bg-red-50 transition-colors font-semibold text-sm flex items-center justify-center gap-2"
                       >
-                        <FiXCircle /> Decline
+                        <FiXCircle /> Cancel
+                      </button>
+                      <button
+                        onClick={() => navigate(`/trainers/${booking.trainer}`)}
+                        className="flex-1 lg:flex-none px-5 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-semibold text-sm"
+                      >
+                        View Trainer
                       </button>
                     </>
                   )}
                   {booking.status === "confirmed" && (
-                    <button
-                      onClick={() => handleStatusChange(booking.id!, "completed")}
-                      className="w-full px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold text-sm flex items-center justify-center gap-2 shadow-lg"
-                    >
-                      <FiCheckCircle /> Mark Complete
-                    </button>
+                    <>
+                      <button className="flex-1 lg:flex-none px-5 py-3 bg-[var(--primary)] text-white rounded-xl hover:bg-red-700 transition-colors font-semibold text-sm">
+                        Join Session
+                      </button>
+                      <button
+                        onClick={() => handleCancelBooking(booking.id!)}
+                        className="flex-1 lg:flex-none px-5 py-3 border-2 border-red-500 text-red-500 rounded-xl hover:bg-red-50 transition-colors font-semibold text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </>
                   )}
-                  {(booking.status === "completed" || booking.status === "cancelled") && (
+                  {booking.status === "completed" && (
+                    <>
+                      <button className="flex-1 lg:flex-none px-5 py-3 bg-yellow-500 text-white rounded-xl hover:bg-yellow-600 transition-colors font-semibold text-sm flex items-center justify-center gap-2">
+                        <FaInfoCircle /> Leave Review
+                      </button>
+                      <button className="flex-1 lg:flex-none px-5 py-3 bg-[var(--primary)] text-white rounded-xl hover:bg-red-700 transition-colors font-semibold text-sm">
+                        Book Again
+                      </button>
+                    </>
+                  )}
+                  {booking.status === "cancelled" && (
                     <button
-                      disabled
-                      className="w-full px-5 py-3 bg-gray-300 text-gray-600 rounded-xl font-semibold text-sm cursor-not-allowed"
+                      onClick={() => navigate(`/trainers/${booking.trainer}`)}
+                      className="flex-1 lg:flex-none px-5 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-semibold text-sm"
                     >
-                      {booking.status === "completed" ? "Completed" : "Cancelled"}
+                      View Trainer
                     </button>
                   )}
                 </div>
@@ -288,15 +296,23 @@ export default function TrainerBookings() {
             <FaCalendarAlt className="text-4xl text-gray-400" />
           </div>
           <h3 className="text-xl font-bold text-gray-900 mb-2">
-            No {filter !== "all" ? filter : ""} bookings found
+            No {filterStatus !== "all" ? filterStatus : ""} bookings found
           </h3>
           <p className="text-gray-500 mb-6">
-            {filter === "all"
-              ? "You don't have any bookings yet"
-              : `No ${filter} bookings at the moment`}
+            {filterStatus === "all"
+              ? "Start by booking a training session!"
+              : `You don't have any ${filterStatus} bookings at the moment.`}
           </p>
+          <button
+            onClick={() => navigate("/find-trainers")}
+            className="px-6 py-3 bg-[var(--primary)] text-white rounded-xl hover:bg-red-700 transition-colors font-semibold"
+          >
+            Find Trainers
+          </button>
         </div>
       )}
-    </div>
+    </ClientPageContainer>
   );
-}
+};
+
+export default MyBookings;
