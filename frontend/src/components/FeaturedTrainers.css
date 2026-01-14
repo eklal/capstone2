@@ -1,0 +1,114 @@
+/* Featured Trainers Carousel Styling */
+
+.featured-trainers-swiper {
+  padding-left: 40px;
+  padding-right: 40px;
+}
+
+/* Navigation Buttons - Modern Design */
+.featured-trainers-swiper .swiper-button-next,
+.featured-trainers-swiper .swiper-button-prev {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border-radius: 50%;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 2px solid rgba(220, 38, 38, 0.1);
+}
+
+.featured-trainers-swiper .swiper-button-next:hover,
+.featured-trainers-swiper .swiper-button-prev:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  box-shadow: 0 8px 24px rgba(220, 38, 38, 0.35);
+  transform: scale(1.15);
+  border-color: #dc2626;
+}
+
+/* Hide default arrows */
+.featured-trainers-swiper .swiper-button-next::after,
+.featured-trainers-swiper .swiper-button-prev::after {
+  display: none;
+}
+
+/* Custom Arrow Styling */
+.custom-arrow-icon {
+  font-size: 24px;
+  color: #dc2626;
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 2px 4px rgba(220, 38, 38, 0.2));
+}
+
+.featured-trainers-swiper .swiper-button-next:hover .custom-arrow-icon,
+.featured-trainers-swiper .swiper-button-prev:hover .custom-arrow-icon {
+  color: white;
+  filter: drop-shadow(0 2px 8px rgba(255, 255, 255, 0.4));
+}
+
+/* Positioning */
+.featured-trainers-swiper .swiper-button-prev {
+  left: 0;
+}
+
+.featured-trainers-swiper .swiper-button-next {
+  right: 0;
+}
+
+/* Disabled state */
+.featured-trainers-swiper .swiper-button-disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: scale(0.95);
+}
+
+/* Pagination Bullets */
+.featured-trainers-swiper .swiper-pagination-bullet {
+  width: 12px;
+  height: 12px;
+  background: #cbd5e1;
+  opacity: 1;
+  transition: all 0.3s ease;
+}
+
+.featured-trainers-swiper .swiper-pagination-bullet-active {
+  background: #dc2626;
+  width: 32px;
+  border-radius: 6px;
+}
+
+.featured-trainers-swiper .swiper-pagination {
+  bottom: 0 !important;
+}
+
+/* Smooth slide transitions */
+.featured-trainers-swiper .swiper-slide {
+  height: auto;
+  display: flex;
+  align-items: stretch;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .featured-trainers-swiper {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .featured-trainers-swiper .swiper-button-next,
+  .featured-trainers-swiper .swiper-button-prev {
+    width: 44px;
+    height: 44px;
+  }
+
+  .custom-arrow-icon {
+    font-size: 20px;
+  }
+
+  .featured-trainers-swiper .swiper-button-prev {
+    left: -5px;
+  }
+
+  .featured-trainers-swiper .swiper-button-next {
+    right: -5px;
+  }
+}

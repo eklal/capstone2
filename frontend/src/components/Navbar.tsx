@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { HiMenu } from "react-icons/hi";
 import { IoClose } from "react-icons/io5";
+import { FaDumbbell, FaUser } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 
 const Navbar = () => {
@@ -25,10 +26,12 @@ const Navbar = () => {
             <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
 
                 {/* Logo */}
-                <Link to="/" className="flex flex-row font-bold text-xl leading-tight">
-                    <span className="text-2xl">🏋️‍♂️</span>
-                    <span>Boutique</span><br/>
-                    <span className="text-[var(--primary)]">Fitness</span>
+                <Link to="/" className="flex flex-row font-bold text-xl leading-tight items-center gap-2">
+                    <FaDumbbell className="text-2xl text-[var(--primary)]" />
+                    <div>
+                        <span>Boutique</span><br/>
+                        <span className="text-[var(--primary)]">Fitness</span>
+                    </div>
                 </Link>
 
                 {/* Desktop Menu */}
@@ -55,7 +58,8 @@ const Navbar = () => {
                     ) : (
                         <>
                             <Link to={getDashboardRoute()} className="flex items-center gap-2">
-                                <span className="font-medium">👤 {user?.username}</span>
+                                <FaUser className="text-gray-600" />
+                                <span className="font-medium">{user?.username}</span>
                             </Link>
                             <button
                                 onClick={logout}
@@ -133,10 +137,11 @@ const Navbar = () => {
                         <>
                             <Link
                                 to={getDashboardRoute()}
-                                className="mt-6 border border-[var(--primary)] px-4 py-2 rounded-lg text-center"
+                                className="mt-6 border border-[var(--primary)] px-4 py-2 rounded-lg text-center flex items-center justify-center gap-2"
                                 onClick={closeMenu}
                             >
-                                👤 {user?.username}
+                                <FaUser />
+                                <span>{user?.username}</span>
                             </Link>
 
                             <button
