@@ -18,16 +18,23 @@ class SpecialisationSerializer(serializers.ModelSerializer):
 
 
 class TrainerReadSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(source="user.id", read_only=True)
     user_name = serializers.CharField(source="user.username", read_only=True)
     email = serializers.EmailField(source="user.email", read_only=True)
     profile_pic = FileSerializer(read_only=True)
-    certifications = FileSerializer(many=True, read_only=True)
+    certifications = serializers.SerializerMethodField()
     specialisations = SpecialisationSerializer(many=True, read_only=True)
+
+    def get_certifications(self, obj):
+        # Only return files with file_type="certification"
+        cert_files = obj.certifications.filter(file_type="certification")
+        return FileSerializer(cert_files, many=True).data
 
     class Meta:
         model = TrainerProfile
         fields = [
             "id",
+            "user_id",
             "user_name",
             "email",
             "phone",
@@ -85,6 +92,7 @@ class TrainerCreateUpdateSerializer(serializers.ModelSerializer):
         if profile_pic_file:
             file_instance = File.objects.create(
                 file=profile_pic_file,
+                file_type="profile_pic",  # Set file type
                 content_type=trainer_content_type,
                 object_id=trainer.id
             )
@@ -95,6 +103,7 @@ class TrainerCreateUpdateSerializer(serializers.ModelSerializer):
         for f in certificate_files:
             File.objects.create(
                 file=f,
+                file_type="certification",  # Set file type
                 content_type=trainer_content_type,
                 object_id=trainer.id
             )
@@ -116,6 +125,7 @@ class TrainerCreateUpdateSerializer(serializers.ModelSerializer):
         if profile_pic_file:
             file_instance = File.objects.create(
                 file=profile_pic_file,
+                file_type="profile_pic",  # Set file type
                 content_type=trainer_content_type,
                 object_id=instance.id
             )
@@ -125,6 +135,7 @@ class TrainerCreateUpdateSerializer(serializers.ModelSerializer):
         for f in certificate_files:
             File.objects.create(
                 file=f,
+                file_type="certification",  # Set file type
                 content_type=trainer_content_type,
                 object_id=instance.id
             )

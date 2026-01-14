@@ -93,23 +93,80 @@ class TrainerListView(generics.ListAPIView):
 
 
 class TrainerDetailView(generics.RetrieveAPIView):
-    queryset = TrainerProfile.objects.select_related("user").prefetch_related("specialisations", "certifications")
+    """Get trainer profile by either trainer_id or user_id"""
     serializer_class = TrainerReadSerializer
-    permission_classes = [AllowAny] 
+    permission_classes = [AllowAny]
+    lookup_field = 'pk'
+    
+    def get_queryset(self):
+        return TrainerProfile.objects.select_related("user").prefetch_related(
+            "specialisations", "certifications"
+        )
+    
+    def get_object(self):
+        from rest_framework.exceptions import NotFound
+        pk = self.kwargs.get('pk')
+        
+        # Try to find by trainer profile ID first
+        try:
+            return self.get_queryset().get(pk=pk)
+        except TrainerProfile.DoesNotExist:
+            pass
+        
+        # If not found, try to find by user ID
+        try:
+            return self.get_queryset().get(user_id=pk)
+        except TrainerProfile.DoesNotExist:
+            raise NotFound("Trainer profile not found") 
 
 
 class TrainerUpdateView(generics.UpdateAPIView):
-    queryset = TrainerProfile.objects.all()
     serializer_class = TrainerCreateUpdateSerializer
     permission_classes = [IsAuthenticated, IsTrainer]
+    lookup_field = 'pk'
+
+    def get_queryset(self):
+        return TrainerProfile.objects.select_related("user").prefetch_related(
+            "specialisations", "certifications"
+        )
 
     def get_object(self):
-        # Optional: allow trainer to update only their own profile
-        obj = super().get_object()
+        from rest_framework.exceptions import NotFound, PermissionDenied
+        pk = self.kwargs.get('pk')
+        
+        # Try to find by trainer profile ID first
+        try:
+            obj = self.get_queryset().get(pk=pk)
+        except TrainerProfile.DoesNotExist:
+            # If not found, try to find by user ID
+            try:
+                obj = self.get_queryset().get(user_id=pk)
+            except TrainerProfile.DoesNotExist:
+                raise NotFound("Trainer profile not found")
+        
+        # Allow trainer to update only their own profile
         if self.request.user.role == "trainer" and obj.user != self.request.user:
-            from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("You can only update your own trainer profile")
+        
         return obj
+
+
+class MyTrainerProfileView(generics.RetrieveAPIView):
+    """Get current logged-in trainer's profile"""
+    serializer_class = TrainerReadSerializer
+    permission_classes = [IsAuthenticated, IsTrainer]
+    
+    def get_queryset(self):
+        return TrainerProfile.objects.select_related("user").prefetch_related(
+            "specialisations", "certifications"
+        )
+
+    def get_object(self):
+        from rest_framework.exceptions import NotFound
+        try:
+            return self.get_queryset().get(user=self.request.user)
+        except TrainerProfile.DoesNotExist:
+            raise NotFound("Trainer profile not found")
 
 
 class TrainerDeleteView(generics.DestroyAPIView):
