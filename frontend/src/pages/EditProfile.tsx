@@ -4,6 +4,7 @@ import { getTrainerProfile, updateTrainerProfileWithFiles, getSpecialisations } 
 import { getTrainerAvailability, bulkUpdateAvailability } from "@/api/availability";
 import type { TrainerProfileUpdate, TrainerProfile } from "@/api/trainers";
 import type { AvailabilitySlot } from "@/api/availability";
+import toast, { Toaster } from "react-hot-toast";
 
 interface TimeSlot {
   day: string;
@@ -61,7 +62,9 @@ const EditProfile: React.FC = () => {
   const [profilePicPreview, setProfilePicPreview] = useState<string>("");
   const [certificateFiles, setCertificateFiles] = useState<File[]>([]);
   
-  // Certifications state (for display/existing)
+  // Video links state
+  const [videoLinks, setVideoLinks] = useState<string[]>([]);
+  const [newVideoLink, setNewVideoLink] = useState("");
 
   // Availability state
   const [availability, setAvailability] = useState<TimeSlot[]>(
@@ -83,7 +86,7 @@ const EditProfile: React.FC = () => {
       setLoading(true);
       
       if (!id) {
-        alert("Trainer ID not found in URL");
+        toast.error("Trainer ID not found in URL");
         navigate("/");
         return;
       }
@@ -125,6 +128,9 @@ const EditProfile: React.FC = () => {
       if (data.profile_pic?.file) {
         setProfilePicPreview(data.profile_pic.file);
       }
+
+      // Set video links
+      setVideoLinks(data.videos || []);
 
       // Set availability from API
       if (availabilityData.length > 0) {
@@ -207,6 +213,17 @@ const EditProfile: React.FC = () => {
     setCertificateFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleAddVideoLink = () => {
+    if (newVideoLink.trim()) {
+      setVideoLinks(prev => [...prev, newVideoLink.trim()]);
+      setNewVideoLink("");
+    }
+  };
+
+  const handleRemoveVideoLink = (index: number) => {
+    setVideoLinks(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSave = async () => {
     if (!trainerId) {
       alert("Trainer ID not found");
@@ -225,7 +242,8 @@ const EditProfile: React.FC = () => {
         hourly_rate: parseFloat(hourlyRate),
         professional_title: professionalTitle,
         bio,
-        specialisations: selectedSpecs, // ✅ Add specializations (already numbers)
+        specialisations: selectedSpecs,
+        videos: videoLinks, // Add video links
       };
 
       await updateTrainerProfileWithFiles(
@@ -247,11 +265,34 @@ const EditProfile: React.FC = () => {
 
       await bulkUpdateAvailability(availabilitySlots);
 
-      alert("Profile updated successfully!");
-      navigate(`/trainer-profile/${id}`);
+      toast.success("Profile updated successfully!", {
+        duration: 4000,
+        position: "top-center",
+        style: {
+          background: "#10b981",
+          color: "#fff",
+          fontWeight: "bold",
+          padding: "16px",
+          borderRadius: "12px",
+        },
+      });
+      
+      setTimeout(() => {
+        navigate(`/trainer-profile/${id}`);
+      }, 1500);
     } catch (error) {
       console.error("Error saving profile:", error);
-      alert("Failed to save profile");
+      toast.error("Failed to save profile. Please try again.", {
+        duration: 4000,
+        position: "top-center",
+        style: {
+          background: "#ef4444",
+          color: "#fff",
+          fontWeight: "bold",
+          padding: "16px",
+          borderRadius: "12px",
+        },
+      });
     } finally {
       setSaving(false);
     }
@@ -262,45 +303,52 @@ const EditProfile: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg shadow p-6">
-          {/* Header */}
-          <div className="flex justify-between items-start mb-6">
-            <div>
-              <h1 className="text-2xl font-bold">Edit Profile</h1>
-              <p className="text-gray-600">
-                Update your trainer profile information and showcase your expertise.
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => navigate(`/trainer-profile/${id}`)}
-                className="px-4 py-2 border rounded-md"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="px-4 py-2 bg-black text-white rounded-md disabled:opacity-50"
-              >
-                {saving ? "Saving..." : "Save Changes"}
-              </button>
-            </div>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <Toaster />
+      <div className="max-w-5xl mx-auto px-4">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">Edit Profile</h1>
+            <p className="text-lg text-gray-600">
+              Update your trainer profile information and showcase your expertise
+            </p>
           </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => navigate(`/trainer-profile/${id}`)}
+              className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-6 py-3 bg-[var(--primary)] text-white rounded-xl font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            >
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
 
           {/* Profile Information */}
-          <div className="border rounded-lg p-6 mb-6">
-            <h2 className="text-lg font-semibold mb-4">Profile Information</h2>
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b-2 border-gray-100">
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <span className="text-xl">👤</span>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">Profile Information</h2>
+            </div>
 
             {/* Profile Photo */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-gray-800 mb-3">
                 Profile Photo
               </label>
-              <div className="flex items-center gap-4">
-                <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center text-3xl overflow-hidden">
+              <div className="flex items-center gap-6 p-6 bg-gray-50 rounded-xl border-2 border-gray-200">
+                <div className="w-24 h-24 rounded-2xl bg-gray-200 flex items-center justify-center text-4xl overflow-hidden shadow-lg border-4 border-white">
                   {profilePicPreview ? (
                     <img
                       src={profilePicPreview}
@@ -311,7 +359,7 @@ const EditProfile: React.FC = () => {
                     <span>👤</span>
                   )}
                 </div>
-                <div>
+                <div className="flex-1">
                   <input
                     type="file"
                     id="profile-pic-upload"
@@ -319,97 +367,99 @@ const EditProfile: React.FC = () => {
                     onChange={handleProfilePicChange}
                     className="hidden"
                   />
-                  <label
-                    htmlFor="profile-pic-upload"
-                    className="px-4 py-2 border rounded-md text-sm mr-2 cursor-pointer inline-block hover:bg-gray-50"
-                  >
-                    📤 Upload New Photo
-                  </label>
-                  {profilePicPreview && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setProfilePicFile(null);
-                        setProfilePicPreview("");
-                      }}
-                      className="px-4 py-2 text-sm text-gray-600 hover:text-red-600"
+                  <div className="flex gap-2 mb-2">
+                    <label
+                      htmlFor="profile-pic-upload"
+                      className="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold cursor-pointer hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
                     >
-                      Remove Photo
-                    </button>
-                  )}
-                  <p className="text-xs text-gray-500 mt-2">
-                    JPG, PNG or GIF. Max size 5MB.
+                      📤 Upload Photo
+                    </label>
+                    {profilePicPreview && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProfilePicFile(null);
+                          setProfilePicPreview("");
+                        }}
+                        className="px-5 py-2.5 border-2 border-red-200 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-50 transition-colors"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    JPG, PNG or GIF. Max size 5MB. Recommended: 400x400px
                   </p>
                 </div>
               </div>
             </div>
 
             {/* Username */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="mb-6">
+              <label className="block text-sm font-bold text-gray-800 mb-2">
                 Username <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-all"
                 placeholder="Enter your username"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 mt-2">
                 Your display name visible to clients
               </p>
             </div>
 
             {/* Email and Phone */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-bold text-gray-800 mb-2">
                   Email <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="email"
                   value={email}
                   readOnly
-                  className="w-full px-3 py-2 border rounded-md bg-gray-50"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-600 cursor-not-allowed"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-bold text-gray-800 mb-2">
                   Phone Number
                 </label>
                 <input
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-all"
                   placeholder="+1 (555) 123-4567"
                 />
               </div>
             </div>
 
             {/* City and State */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-bold text-gray-800 mb-2">
                   City
                 </label>
                 <input
                   type="text"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-all"
                   placeholder="New York"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-bold text-gray-800 mb-2">
                   State/Territory
                 </label>
                 <select
                   value={state}
                   onChange={(e) => setState(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-all"
                 >
                   <option value="">Select state/territory</option>
                   <option value="NSW">New South Wales (NSW)</option>
@@ -425,15 +475,15 @@ const EditProfile: React.FC = () => {
             </div>
 
             {/* Experience and Rate */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-bold text-gray-800 mb-2">
                   Years of Experience
                 </label>
                 <select
                   value={experience}
                   onChange={(e) => setExperience(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-all"
                 >
                   <option value="0">Less than 1 year</option>
                   <option value="1">1-2 years</option>
@@ -443,109 +493,124 @@ const EditProfile: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-bold text-gray-800 mb-2">
                   Hourly Rate ($)
                 </label>
                 <input
                   type="number"
                   value={hourlyRate}
                   onChange={(e) => setHourlyRate(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-all"
                   placeholder="75"
                 />
               </div>
             </div>
 
             {/* Professional Title */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="mb-6">
+              <label className="block text-sm font-bold text-gray-800 mb-2">
                 Professional Title
               </label>
               <input
                 type="text"
                 value={professionalTitle}
                 onChange={(e) => setProfessionalTitle(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-all"
                 placeholder="Certified Personal Trainer & Nutrition Coach"
               />
             </div>
 
             {/* Bio */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="mb-6">
+              <label className="block text-sm font-bold text-gray-800 mb-2">
                 Bio
               </label>
               <textarea
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md h-24"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-all resize-none"
+                rows={5}
                 placeholder="Tell clients about your experience and expertise..."
               />
             </div>
 
             {/* Specializations */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="mb-6">
+              <label className="block text-sm font-bold text-gray-800 mb-3">
                 Specializations
               </label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {availableSpecs.map((spec) => (
-                  <label key={spec.id} className="flex items-center gap-2">
+                  <label
+                    key={spec.id}
+                    className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      selectedSpecs.includes(spec.id)
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200 hover:border-blue-300 bg-white"
+                    }`}
+                  >
                     <input
                       type="checkbox"
                       checked={selectedSpecs.includes(spec.id)}
                       onChange={() => handleSpecToggle(spec.id)}
-                      className="rounded"
+                      className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                     />
-                    <span className="text-sm">{spec.name}</span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {spec.name}
+                    </span>
                   </label>
                 ))}
               </div>
               {availableSpecs.length === 0 && (
-                <p className="text-sm text-gray-500 italic">Loading specializations...</p>
+                <p className="text-sm text-gray-500 italic">
+                  Loading specializations...
+                </p>
               )}
             </div>
           </div>
 
           {/* Certificate Files Upload */}
-          <div className="border rounded-lg p-6 mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Upload Certification Files</h2>
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b-2 border-gray-100">
+              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                <span className="text-xl">🎓</span>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">Certifications</h2>
             </div>
-            <div className="mb-4">
+            <div className="mb-4 p-6 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
               <input
                 type="file"
                 accept="image/*,application/pdf"
                 multiple
                 onChange={handleCertificateFilesChange}
-                className="block w-full text-sm text-gray-500
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-md file:border-0
-                  file:text-sm file:font-semibold
-                  file:bg-green-50 file:text-green-700
-                  hover:file:bg-green-100"
+                className="block w-full text-sm text-gray-700
+                  file:mr-4 file:py-3 file:px-6
+                  file:rounded-lg file:border-0
+                  file:text-sm file:font-bold
+                  file:bg-green-600 file:text-white
+                  hover:file:bg-green-700 file:cursor-pointer file:transition-colors"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Upload certification documents (PDF, JPG, PNG - multiple files allowed)
+              <p className="text-xs text-gray-500 mt-3">
+                Upload certification documents (PDF, JPG, PNG) - Multiple files allowed
               </p>
             </div>
             {certificateFiles.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-700 mb-2">
+              <div className="space-y-3 mb-6">
+                <p className="text-sm font-bold text-gray-800 mb-3">
                   Selected Files ({certificateFiles.length}):
                 </p>
                 {certificateFiles.map((file, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between bg-gray-50 p-2 rounded"
+                    className="flex items-center justify-between p-4 bg-green-50 rounded-xl border-2 border-green-200"
                   >
-                    <span className="text-sm text-gray-700">
+                    <span className="text-sm text-gray-900 font-medium">
                       📄 {file.name} ({(file.size / 1024).toFixed(1)} KB)
                     </span>
                     <button
                       type="button"
                       onClick={() => removeCertificateFile(index)}
-                      className="text-red-500 hover:text-red-700 text-sm"
+                      className="px-4 py-2 text-sm text-red-600 font-bold hover:bg-red-50 rounded-lg transition-colors"
                     >
                       Remove
                     </button>
@@ -553,31 +618,33 @@ const EditProfile: React.FC = () => {
                 ))}
               </div>
             )}
-            
+
             {/* Existing Certifications from Backend */}
             {profileData?.certifications && profileData.certifications.length > 0 && (
-              <div className="mt-4 pt-4 border-t">
-                <p className="text-sm font-medium text-gray-700 mb-2">
+              <div className="mt-6 pt-6 border-t-2 border-gray-100">
+                <p className="text-sm font-bold text-gray-800 mb-3">
                   Existing Certifications ({profileData.certifications.length}):
                 </p>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {profileData.certifications.map((cert, index) => (
                     <div
                       key={cert.id || index}
-                      className="flex items-center justify-between bg-blue-50 p-2 rounded"
+                      className="flex items-center justify-between p-4 bg-blue-50 rounded-xl border-2 border-blue-200"
                     >
                       <a
                         href={cert.file}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-blue-700 hover:underline flex items-center gap-2"
+                        className="text-sm text-blue-700 hover:text-blue-900 font-semibold flex items-center gap-2"
                       >
-                        📄 {cert.file.split('/').pop()}
-                        <span className="text-xs text-gray-500">
+                        📄 {cert.file.split("/").pop()}
+                        <span className="text-xs text-gray-500 font-normal">
                           (Uploaded: {new Date(cert.uploaded_at).toLocaleDateString()})
                         </span>
                       </a>
-                      <span className="text-xs text-green-600">✓ Uploaded</span>
+                      <span className="text-xs text-green-600 font-bold bg-green-100 px-3 py-1 rounded-full">
+                        ✓ Uploaded
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -585,68 +652,167 @@ const EditProfile: React.FC = () => {
             )}
           </div>
 
-          {/* Certifications */}
-          {/* Availability Schedule */}
-          <div className="border rounded-lg p-6 mb-6">
-            <h2 className="text-lg font-semibold mb-4">Availability Schedule</h2>
-
-            {availability.map((slot) => (
-              <div key={slot.day} className="flex items-center gap-3 mb-3">
-                <div className="w-32">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={slot.enabled}
-                      onChange={() => handleAvailabilityToggle(slot.day)}
-                      className="rounded"
-                    />
-                    <span className="font-medium">{DAY_LABELS[slot.day]}</span>
-                  </label>
-                </div>
-
-                {slot.enabled ? (
-                  <>
-                    <input
-                      type="time"
-                      value={slot.start_time}
-                      onChange={(e) =>
-                        handleTimeChange(slot.day, "start_time", e.target.value)
-                      }
-                      className="px-3 py-2 border rounded-md"
-                    />
-                    <span>to</span>
-                    <input
-                      type="time"
-                      value={slot.end_time}
-                      onChange={(e) =>
-                        handleTimeChange(slot.day, "end_time", e.target.value)
-                      }
-                      className="px-3 py-2 border rounded-md"
-                    />
-                  </>
-                ) : (
-                  <span className="text-gray-400 text-sm">
-                    Unavailable — click "+ Add Slot" to add time.
-                  </span>
-                )}
+          {/* Training Videos */}
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b-2 border-gray-100">
+              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                <span className="text-xl">🎥</span>
               </div>
-            ))}
+              <h2 className="text-2xl font-bold text-gray-900">Training Videos</h2>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-4">
+              Add YouTube video links to showcase your training style and expertise
+            </p>
+
+            {/* Add Video Link */}
+            <div className="flex gap-3 mb-6">
+              <input
+                type="url"
+                value={newVideoLink}
+                onChange={(e) => setNewVideoLink(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleAddVideoLink()}
+                placeholder="Paste YouTube video URL (e.g., https://www.youtube.com/watch?v=...)"
+                className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+              />
+              <button
+                type="button"
+                onClick={handleAddVideoLink}
+                className="px-6 py-3 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-colors"
+              >
+                Add Video
+              </button>
+            </div>
+
+            {/* Video Links List */}
+            {videoLinks.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-sm font-bold text-gray-800 mb-3">
+                  Your Training Videos ({videoLinks.length}):
+                </p>
+                {videoLinks.map((link, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-4 bg-purple-50 rounded-xl border-2 border-purple-200"
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="w-10 h-10 rounded-lg bg-purple-600 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white text-lg">🎥</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 mb-1">
+                          Video {index + 1}
+                        </p>
+                        <p className="text-xs text-gray-600 truncate">
+                          {link}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveVideoLink(index)}
+                      className="px-4 py-2 text-sm text-red-600 font-bold hover:bg-red-50 rounded-lg transition-colors flex-shrink-0 ml-2"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {videoLinks.length === 0 && (
+              <div className="text-center py-8 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+                <p className="text-gray-500 text-sm">
+                  No videos added yet. Add YouTube links to showcase your training!
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Availability Schedule */}
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b-2 border-gray-100">
+              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                <span className="text-xl">📅</span>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">Availability Schedule</h2>
+            </div>
+
+            <div className="space-y-3">
+              {availability.map((slot) => (
+                <div
+                  key={slot.day}
+                  className={`flex flex-col md:flex-row md:items-center gap-4 p-4 rounded-xl border-2 transition-all ${
+                    slot.enabled
+                      ? "border-green-300 bg-green-50"
+                      : "border-gray-200 bg-gray-50"
+                  }`}
+                >
+                  <div className="w-full md:w-40">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={slot.enabled}
+                        onChange={() => handleAvailabilityToggle(slot.day)}
+                        className="w-5 h-5 text-green-600 rounded focus:ring-2 focus:ring-green-500"
+                      />
+                      <span className="font-bold text-gray-900">
+                        {DAY_LABELS[slot.day]}
+                      </span>
+                    </label>
+                  </div>
+
+                  {slot.enabled ? (
+                    <div className="flex flex-1 items-center gap-3">
+                      <input
+                        type="time"
+                        value={slot.start_time}
+                        onChange={(e) =>
+                          handleTimeChange(slot.day, "start_time", e.target.value)
+                        }
+                        className="flex-1 px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                      <span className="text-gray-600 font-medium">to</span>
+                      <input
+                        type="time"
+                        value={slot.end_time}
+                        onChange={(e) =>
+                          handleTimeChange(slot.day, "end_time", e.target.value)
+                        }
+                        className="flex-1 px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                    </div>
+                  ) : (
+                    <span className="text-gray-500 text-sm italic">
+                      Check the box to set availability for this day
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Footer Buttons */}
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 mt-8 pt-6 border-t-2 border-gray-100">
             <button
               onClick={() => navigate(`/trainer-profile/${id}`)}
-              className="px-4 py-2 border rounded-md"
+              className="px-8 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-4 py-2 bg-black text-white rounded-md disabled:opacity-50"
+              className="px-8 py-3 bg-[var(--primary)] text-white rounded-xl font-bold hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
-              {saving ? "Saving..." : "Save Changes"}
+              {saving ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  Saving...
+                </span>
+              ) : (
+                "Save Changes"
+              )}
             </button>
           </div>
         </div>

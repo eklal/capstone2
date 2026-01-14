@@ -15,6 +15,7 @@ import EditProfile from "@/pages/EditProfile";
 import TrainerDetailPage from "@/pages/TrainerDetailPage";
 import PaymentPage from "@/pages/PaymentPage";
 import TrainerBookings from "@/pages/TrainerBookings";
+import MyBookings from "@/pages/MyBookings";
 
 import TrainerPageContainer from "@/components/layout/TrainerPageContainer";
 import PublicRoute from "@/components/routes/PublicRoute";
@@ -56,6 +57,14 @@ const AppRouter: React.FC = () => {
           element={
             <ProtectedRoute requiredRole="client">
               <ClientDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/my-bookings" 
+          element={
+            <ProtectedRoute requiredRole="client">
+              <MyBookings />
             </ProtectedRoute>
           } 
         />
