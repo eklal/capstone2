@@ -35,6 +35,14 @@ const TrainerDetailPage: React.FC = () => {
   const [selectedEndTime, setSelectedEndTime] = useState<string>("");
   const [bookingNotes, setBookingNotes] = useState("");
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [playingVideo, setPlayingVideo] = useState<number | null>(null);
+
+  // Extract YouTube video ID from URL
+  const getYouTubeVideoId = (url: string): string | null => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
 
   useEffect(() => {
     if (trainerId) {
@@ -272,21 +280,69 @@ const TrainerDetailPage: React.FC = () => {
                   </span>
                   Training Videos
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {trainer.videos.map((video, index) => (
-                    <div
-                      key={index}
-                      className="group relative bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl h-56 flex items-center justify-center overflow-hidden cursor-pointer hover:shadow-xl transition-all"
-                    >
-                      <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
-                      <div className="relative z-10 text-center">
-                        <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                          <FaPlay className="text-[var(--primary)] text-2xl ml-1" />
-                        </div>
-                        <p className="text-sm font-semibold text-gray-900">Training Session {index + 1}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {trainer.videos.map((video, index) => {
+                    const videoId = getYouTubeVideoId(video);
+                    const isPlaying = playingVideo === index;
+                    
+                    return (
+                      <div
+                        key={index}
+                        className="group rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all border-2 border-gray-200"
+                      >
+                        {isPlaying && videoId ? (
+                          // YouTube Embedded Player
+                          <div className="relative pb-[56.25%] h-0">
+                            <iframe
+                              className="absolute top-0 left-0 w-full h-full"
+                              src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
+                              title={`Training Video ${index + 1}`}
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                            ></iframe>
+                          </div>
+                        ) : (
+                          // YouTube Thumbnail with Play Button
+                          <div
+                            className="relative cursor-pointer"
+                            onClick={() => setPlayingVideo(index)}
+                          >
+                            <div className="relative pb-[56.25%] h-0 bg-gray-900">
+                              {videoId ? (
+                                <img
+                                  src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
+                                  alt={`Training Video ${index + 1}`}
+                                  className="absolute top-0 left-0 w-full h-full object-cover"
+                                  onError={(e) => {
+                                    // Fallback to lower quality thumbnail if maxresdefault doesn't exist
+                                    e.currentTarget.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                                  }}
+                                />
+                              ) : (
+                                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
+                                  <FaPlay className="text-white text-4xl" />
+                                </div>
+                              )}
+                              {/* Play Button Overlay */}
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/50 transition-colors">
+                                <div className="w-20 h-20 rounded-full bg-white/95 flex items-center justify-center group-hover:scale-110 transition-transform shadow-2xl">
+                                  <FaPlay className="text-[var(--primary)] text-3xl ml-1" />
+                                </div>
+                              </div>
+                            </div>
+                            <div className="p-4 bg-white border-t-2 border-gray-100">
+                              <p className="text-sm font-bold text-gray-900">
+                                Training Video {index + 1}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Click to play
+                              </p>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

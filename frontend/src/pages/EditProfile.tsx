@@ -4,6 +4,7 @@ import { getTrainerProfile, updateTrainerProfileWithFiles, getSpecialisations } 
 import { getTrainerAvailability, bulkUpdateAvailability } from "@/api/availability";
 import type { TrainerProfileUpdate, TrainerProfile } from "@/api/trainers";
 import type { AvailabilitySlot } from "@/api/availability";
+import toast, { Toaster } from "react-hot-toast";
 
 interface TimeSlot {
   day: string;
@@ -61,7 +62,9 @@ const EditProfile: React.FC = () => {
   const [profilePicPreview, setProfilePicPreview] = useState<string>("");
   const [certificateFiles, setCertificateFiles] = useState<File[]>([]);
   
-  // Certifications state (for display/existing)
+  // Video links state
+  const [videoLinks, setVideoLinks] = useState<string[]>([]);
+  const [newVideoLink, setNewVideoLink] = useState("");
 
   // Availability state
   const [availability, setAvailability] = useState<TimeSlot[]>(
@@ -83,7 +86,7 @@ const EditProfile: React.FC = () => {
       setLoading(true);
       
       if (!id) {
-        alert("Trainer ID not found in URL");
+        toast.error("Trainer ID not found in URL");
         navigate("/");
         return;
       }
@@ -125,6 +128,9 @@ const EditProfile: React.FC = () => {
       if (data.profile_pic?.file) {
         setProfilePicPreview(data.profile_pic.file);
       }
+
+      // Set video links
+      setVideoLinks(data.videos || []);
 
       // Set availability from API
       if (availabilityData.length > 0) {
@@ -207,6 +213,17 @@ const EditProfile: React.FC = () => {
     setCertificateFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleAddVideoLink = () => {
+    if (newVideoLink.trim()) {
+      setVideoLinks(prev => [...prev, newVideoLink.trim()]);
+      setNewVideoLink("");
+    }
+  };
+
+  const handleRemoveVideoLink = (index: number) => {
+    setVideoLinks(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSave = async () => {
     if (!trainerId) {
       alert("Trainer ID not found");
@@ -225,7 +242,8 @@ const EditProfile: React.FC = () => {
         hourly_rate: parseFloat(hourlyRate),
         professional_title: professionalTitle,
         bio,
-        specialisations: selectedSpecs, // ✅ Add specializations (already numbers)
+        specialisations: selectedSpecs,
+        videos: videoLinks, // Add video links
       };
 
       await updateTrainerProfileWithFiles(
@@ -247,11 +265,34 @@ const EditProfile: React.FC = () => {
 
       await bulkUpdateAvailability(availabilitySlots);
 
-      alert("Profile updated successfully!");
-      navigate(`/trainer-profile/${id}`);
+      toast.success("Profile updated successfully!", {
+        duration: 4000,
+        position: "top-center",
+        style: {
+          background: "#10b981",
+          color: "#fff",
+          fontWeight: "bold",
+          padding: "16px",
+          borderRadius: "12px",
+        },
+      });
+      
+      setTimeout(() => {
+        navigate(`/trainer-profile/${id}`);
+      }, 1500);
     } catch (error) {
       console.error("Error saving profile:", error);
-      alert("Failed to save profile");
+      toast.error("Failed to save profile. Please try again.", {
+        duration: 4000,
+        position: "top-center",
+        style: {
+          background: "#ef4444",
+          color: "#fff",
+          fontWeight: "bold",
+          padding: "16px",
+          borderRadius: "12px",
+        },
+      });
     } finally {
       setSaving(false);
     }
@@ -263,6 +304,7 @@ const EditProfile: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
+      <Toaster />
       <div className="max-w-5xl mx-auto px-4">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
@@ -610,10 +652,87 @@ const EditProfile: React.FC = () => {
             )}
           </div>
 
-          {/* Availability Schedule */}
+          {/* Training Videos */}
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-6 pb-4 border-b-2 border-gray-100">
               <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                <span className="text-xl">🎥</span>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">Training Videos</h2>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-4">
+              Add YouTube video links to showcase your training style and expertise
+            </p>
+
+            {/* Add Video Link */}
+            <div className="flex gap-3 mb-6">
+              <input
+                type="url"
+                value={newVideoLink}
+                onChange={(e) => setNewVideoLink(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleAddVideoLink()}
+                placeholder="Paste YouTube video URL (e.g., https://www.youtube.com/watch?v=...)"
+                className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+              />
+              <button
+                type="button"
+                onClick={handleAddVideoLink}
+                className="px-6 py-3 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-colors"
+              >
+                Add Video
+              </button>
+            </div>
+
+            {/* Video Links List */}
+            {videoLinks.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-sm font-bold text-gray-800 mb-3">
+                  Your Training Videos ({videoLinks.length}):
+                </p>
+                {videoLinks.map((link, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-4 bg-purple-50 rounded-xl border-2 border-purple-200"
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="w-10 h-10 rounded-lg bg-purple-600 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white text-lg">🎥</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 mb-1">
+                          Video {index + 1}
+                        </p>
+                        <p className="text-xs text-gray-600 truncate">
+                          {link}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveVideoLink(index)}
+                      className="px-4 py-2 text-sm text-red-600 font-bold hover:bg-red-50 rounded-lg transition-colors flex-shrink-0 ml-2"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {videoLinks.length === 0 && (
+              <div className="text-center py-8 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+                <p className="text-gray-500 text-sm">
+                  No videos added yet. Add YouTube links to showcase your training!
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Availability Schedule */}
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b-2 border-gray-100">
+              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
                 <span className="text-xl">📅</span>
               </div>
               <h2 className="text-2xl font-bold text-gray-900">Availability Schedule</h2>
