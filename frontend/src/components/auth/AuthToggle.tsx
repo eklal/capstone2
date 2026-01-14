@@ -7,24 +7,24 @@ interface Props {
 
 const AuthToggle: React.FC<Props> = ({ mode, setMode }) => {
   return (
-    <div className="relative flex w-full max-w-xs bg-gray-200 rounded-full p-1 cursor-pointer">
+    <div className="relative flex w-full max-w-sm bg-gray-100 rounded-xl p-1.5 cursor-pointer shadow-inner mx-auto">
       {/* Slider */}
       <div
-        className="absolute w-1/2 h-full  bg-[var(--primary)] rounded-full transition-all duration-500"
-        style={{ left: mode === "signin" ? "0%" : "50%" }}
+        className="absolute w-1/2 h-[calc(100%-0.75rem)] bg-[var(--primary)] rounded-lg transition-all duration-300 ease-out shadow-lg"
+        style={{ left: mode === "signin" ? "0.375rem" : "calc(50% - 0.375rem)" }}
       />
 
       {/* Buttons */}
-      <div className="relative flex w-full text-sm font-medium text-center">
+      <div className="relative flex w-full text-sm font-bold text-center">
         <button
-          className={`w-1/2 py-2 z-10 ${mode === "signin" ? "text-white" : "text-gray-600"}`}
+          className={`w-1/2 py-3 z-10 transition-colors duration-300 ${mode === "signin" ? "text-white" : "text-gray-600"}`}
           onClick={() => setMode("signin")}
         >
           Sign In
         </button>
 
         <button
-          className={`w-1/2 py-2 z-10 ${mode === "signup" ? "text-white" : "text-gray-600"}`}
+          className={`w-1/2 py-3 z-10 transition-colors duration-300 ${mode === "signup" ? "text-white" : "text-gray-600"}`}
           onClick={() => setMode("signup")}
         >
           Sign Up

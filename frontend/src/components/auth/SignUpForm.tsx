@@ -114,37 +114,37 @@ const SignUpForm: React.FC = () => {
       />
 
       {/* Role Selection */}
-      <div className="mb-4">
-        <label className="text-sm text-gray-600">I am a</label>
+      <div className="mb-6">
+        <label className="text-sm font-bold text-gray-700 mb-3 block">I am a</label>
         <div className="flex gap-4">
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="flex-1 flex items-center justify-center gap-2 cursor-pointer px-4 py-3 border-2 border-gray-300 rounded-xl hover:border-[var(--primary)] hover:bg-red-50 transition-all has-[:checked]:border-[var(--primary)] has-[:checked]:bg-red-50">
             <input
               type="radio"
               value="client"
               {...register("role", { required: "Please select a role" })}
-              className="w-4 h-4 text-sm text-gray-600"
+              className="w-4 h-4"
             />
-            <span className="text-sm text-gray-600">Client</span>
+            <span className="text-sm font-semibold text-gray-700">Client</span>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="flex-1 flex items-center justify-center gap-2 cursor-pointer px-4 py-3 border-2 border-gray-300 rounded-xl hover:border-[var(--primary)] hover:bg-red-50 transition-all has-[:checked]:border-[var(--primary)] has-[:checked]:bg-red-50">
             <input
               type="radio"
               value="trainer"
               {...register("role", { required: "Please select a role" })}
               className="w-4 h-4"
             />
-            <span className="text-sm text-gray-600">Trainer</span>
+            <span className="text-sm font-semibold text-gray-700">Trainer</span>
           </label>
         </div>
         {errors.role && (
-          <p className="text-red-500 text-sm mt-1">{errors.role.message}</p>
+          <p className="text-red-500 text-sm mt-2 font-medium">{errors.role.message}</p>
         )}
       </div>
 
       {/* Submit Button */}
       <button
         type="submit"
-        className="w-full bg-[var(--primary)] text-white py-2 rounded-md mt-4 transition"
+        className="w-full bg-[var(--primary)] text-white py-3.5 rounded-xl font-bold text-base hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-70"
         disabled={isSigningUp}
       >
         {isSigningUp ? "Creating Account..." : "Create Account"}

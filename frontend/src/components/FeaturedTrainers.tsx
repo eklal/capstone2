@@ -71,23 +71,7 @@ const FeaturedTrainers: React.FC = () => {
             {error}
           </div>
         ) : trainers.length > 0 ? (
-          <div className="relative">
-            {/* Custom Navigation Buttons */}
-            <button
-              onClick={() => swiperRef.current?.slidePrev()}
-              className="swiper-button-prev absolute left-0 top-1/2 -translate-y-1/2 z-10"
-              aria-label="Previous slide"
-            >
-              <FaChevronLeft className="custom-arrow-icon" />
-            </button>
-            <button
-              onClick={() => swiperRef.current?.slideNext()}
-              className="swiper-button-next absolute right-0 top-1/2 -translate-y-1/2 z-10"
-              aria-label="Next slide"
-            >
-              <FaChevronRight className="custom-arrow-icon" />
-            </button>
-
+          <div className="relative px-16">
             <Swiper
               modules={[Navigation, Pagination, Autoplay]}
               onSwiper={(swiper) => {
@@ -129,6 +113,22 @@ const FeaturedTrainers: React.FC = () => {
                 </SwiperSlide>
               ))}
             </Swiper>
+
+            {/* Custom Navigation Buttons */}
+            <button
+              onClick={() => swiperRef.current?.slidePrev()}
+              className="custom-nav-btn custom-nav-prev"
+              aria-label="Previous slide"
+            >
+              <FaChevronLeft className="custom-arrow-icon" />
+            </button>
+            <button
+              onClick={() => swiperRef.current?.slideNext()}
+              className="custom-nav-btn custom-nav-next"
+              aria-label="Next slide"
+            >
+              <FaChevronRight className="custom-arrow-icon" />
+            </button>
           </div>
         ) : (
           <div className="mt-10 text-center text-gray-500">

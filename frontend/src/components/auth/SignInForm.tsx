@@ -78,40 +78,40 @@ const SignInForm: React.FC = () => {
 
                 {/* REMEMBER ME & FORGOT PASSWORD */}
                 <div className="flex items-center justify-between text-sm mt-2 mb-4">
-                    <label className="flex items-center gap-2">
-                        <input type="checkbox" {...register("remember")} />
-                        Remember me
+                    <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" {...register("remember")} className="w-4 h-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]" />
+                        <span className="font-medium text-gray-700">Remember me</span>
                     </label>
-                    <a className="text-gray-600 cursor-pointer">Forgot password?</a>
+                    <a className="text-[var(--primary)] font-semibold cursor-pointer hover:underline">Forgot password?</a>
                 </div>
 
                 {/* SIGN IN BUTTON */}
                 <button
                     type="submit"
-                    className="w-full bg-[var(--primary)] text-white py-2 rounded-md hover:bg-primary-dark transition"
+                    className="w-full bg-[var(--primary)] text-white py-3.5 rounded-xl font-bold text-base hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-70"
                     disabled={isLoggingIn}
                 >
                     {isLoggingIn ? "Signing in..." : "Sign In"}
                 </button>
 
                 {/* OR CONTINUE WITH */}
-                <div className="flex items-center gap-3 my-4">
-                    <div className="flex-1 border" />
-                    <span className="text-gray-400 text-sm">Or continue with</span>
-                    <div className="flex-1 border" />
+                <div className="flex items-center gap-3 my-6">
+                    <div className="flex-1 border-t border-gray-300" />
+                    <span className="text-gray-500 text-sm font-medium">Or continue with</span>
+                    <div className="flex-1 border-t border-gray-300" />
                 </div>
 
 
 
             </form>
             {/* SOCIAL LOGIN */}
-            <div className="flex gap-4">
+            <div className="flex gap-4 mt-4">
                 <button type="button"
-                    className="flex-1 border py-2 rounded-md flex items-center justify-center gap-2" onClick={handleGoogleLogin}
+                    className="flex-1 border-2 border-gray-300 py-3 rounded-xl flex items-center justify-center gap-2 font-semibold hover:border-[var(--primary)] hover:bg-red-50 transition-all" onClick={handleGoogleLogin}
                 >
                     🌐 Google
                 </button>
-                <button type="button" className="flex-1 border py-2 rounded-md flex items-center justify-center gap-2" onClick={handleFacebookLogin}
+                <button type="button" className="flex-1 border-2 border-gray-300 py-3 rounded-xl flex items-center justify-center gap-2 font-semibold hover:border-[var(--primary)] hover:bg-red-50 transition-all" onClick={handleFacebookLogin}
                 >
                     📘 Facebook
                 </button>
