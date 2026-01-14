@@ -1,12 +1,22 @@
 # bookings/views.py
 from rest_framework import generics, status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.pagination import PageNumberPagination
 from .models import Booking, Availability
 from .serializers import BookingSerializer, AvailabilitySerializer
 from common.permissions import IsBookingOwnerOrTrainerOrAdmin
 from trainers.models import TrainerProfile
+from datetime import datetime, timedelta, time
+from django.db.models import Q
+
+
+class BookingPagination(PageNumberPagination):
+    """Custom pagination for bookings"""
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 
 # ==================== AVAILABILITY VIEWS ====================
@@ -110,6 +120,103 @@ class AvailabilityBulkUpdateView(APIView):
         }, status=status.HTTP_200_OK)
 
 
+class AvailableSlotsView(APIView):
+    """Get available time slots for a specific trainer and date"""
+    permission_classes = [AllowAny]  # Anyone can check availability
+
+    def get(self, request, trainer_id):
+        date_str = request.query_params.get('date')
+        
+        if not date_str:
+            return Response(
+                {"error": "Date parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # Parse the date
+            booking_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return Response(
+                {"error": "Invalid date format. Use YYYY-MM-DD"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get trainer profile
+        try:
+            trainer_profile = TrainerProfile.objects.get(id=trainer_id)
+        except TrainerProfile.DoesNotExist:
+            try:
+                # Try by user ID
+                trainer_profile = TrainerProfile.objects.get(user_id=trainer_id)
+            except TrainerProfile.DoesNotExist:
+                return Response(
+                    {"error": "Trainer not found"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+        # Get day of week
+        day_of_week = booking_date.strftime('%A').lower()
+
+        # Get trainer's availability for this day
+        availabilities = Availability.objects.filter(
+            trainer=trainer_profile,
+            day_of_week=day_of_week,
+            is_available=True
+        )
+
+        if not availabilities.exists():
+            return Response({
+                "date": date_str,
+                "day_of_week": day_of_week,
+                "available_slots": []
+            })
+
+        # Get all bookings for this trainer on this date
+        bookings = Booking.objects.filter(
+            trainer=trainer_profile,
+            date=booking_date
+        ).exclude(status='cancelled')
+
+        # Generate available time slots
+        available_slots = []
+        
+        for availability in availabilities:
+            start_time = availability.start_time
+            end_time = availability.end_time
+            
+            # Generate hourly slots
+            current_time = datetime.combine(booking_date, start_time)
+            end_datetime = datetime.combine(booking_date, end_time)
+            
+            while current_time < end_datetime:
+                slot_start = current_time.time()
+                slot_end = (current_time + timedelta(hours=1)).time()
+                
+                # Check if this slot is already booked
+                is_booked = bookings.filter(
+                    start_time__lt=slot_end,
+                    end_time__gt=slot_start
+                ).exists()
+                
+                if not is_booked:
+                    available_slots.append({
+                        "start_time": slot_start.strftime('%H:%M'),
+                        "end_time": slot_end.strftime('%H:%M'),
+                        "available": True
+                    })
+                
+                current_time += timedelta(hours=1)
+
+        return Response({
+            "date": date_str,
+            "day_of_week": day_of_week,
+            "trainer_id": trainer_profile.id,
+            "trainer_name": trainer_profile.user.username,
+            "available_slots": available_slots
+        })
+
+
 # ==================== BOOKING VIEWS ====================
 
 class BookingCreateView(generics.CreateAPIView):
@@ -129,6 +236,7 @@ class BookingListView(generics.ListAPIView):
     """List bookings based on user role and filters"""
     serializer_class = BookingSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = BookingPagination
 
     def get_queryset(self):
         user = self.request.user
@@ -184,7 +292,12 @@ class BookingDeleteView(generics.DestroyAPIView):
 
 
 class BookingStatusUpdateView(APIView):
-    """Accept, decline, or complete a booking (for trainers)"""
+    """Update booking status.
+
+    - Trainers: can update status for their own bookings
+    - Clients: can cancel their own bookings only
+    - Admins: can update any booking
+    """
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, pk):
@@ -196,6 +309,13 @@ class BookingStatusUpdateView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+        new_status = request.data.get('status')
+        if new_status not in ['pending', 'confirmed', 'cancelled', 'completed']:
+            return Response(
+                {"error": "Invalid status"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         # Check permissions
         if request.user.role == "trainer":
             if booking.trainer.user != request.user:
@@ -203,17 +323,21 @@ class BookingStatusUpdateView(APIView):
                     {"error": "You can only update your own bookings"},
                     status=status.HTTP_403_FORBIDDEN
                 )
+        elif request.user.role == "client":
+            if booking.client != request.user:
+                return Response(
+                    {"error": "You can only update your own bookings"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            if new_status != "cancelled":
+                return Response(
+                    {"error": "Clients can only cancel bookings"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
         elif request.user.role != "admin":
             return Response(
-                {"error": "Only trainers and admins can update booking status"},
+                {"error": "Not allowed to update booking status"},
                 status=status.HTTP_403_FORBIDDEN
-            )
-
-        new_status = request.data.get('status')
-        if new_status not in ['pending', 'confirmed', 'cancelled', 'completed']:
-            return Response(
-                {"error": "Invalid status"},
-                status=status.HTTP_400_BAD_REQUEST
             )
 
         booking.status = new_status

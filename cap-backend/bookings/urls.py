@@ -5,6 +5,7 @@ from .views import (
     AvailabilityListCreateView,
     AvailabilityDetailView,
     AvailabilityBulkUpdateView,
+    AvailableSlotsView,
     # Booking views
     BookingCreateView,
     BookingListView,
@@ -19,6 +20,7 @@ urlpatterns = [
     path("availability/", AvailabilityListCreateView.as_view(), name="availability-list-create"),
     path("availability/<int:pk>/", AvailabilityDetailView.as_view(), name="availability-detail"),
     path("availability/bulk-update/", AvailabilityBulkUpdateView.as_view(), name="availability-bulk-update"),
+    path("availability/trainer/<int:trainer_id>/slots/", AvailableSlotsView.as_view(), name="available-slots"),
     
     # Booking endpoints
     path("", BookingListView.as_view(), name="booking-list"),
